@@ -14,7 +14,7 @@ Some workflows I wrote for my PhD research projects
 
 ### Association studies
 1. Genome-wide association study (PLINK)
-2. Multi-ancestry Genome-wide association study (linear mixed model)(GENESIS)
+2. Multi-ancestry Genome-wide association study 
 3. Multi-level modeling 
 
 
