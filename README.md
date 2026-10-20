@@ -9,7 +9,11 @@ Some workflows I wrote for my PhD research projects
 4. CNV pipelines
 5. Mutational signatures
 6. RNA-sequencing pipelines
+<<<<<<< HEAD
  
+=======
+
+>>>>>>> 3ad6eff43439ef0848d28f3bf648d3f4b5879102
 
 
 ### Association studies
