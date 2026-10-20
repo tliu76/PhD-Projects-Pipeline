@@ -4,7 +4,7 @@ An HPC workflow that pre-processes matched tumor-normal whole-genome sequencing 
 
 pipeline:
 
-<img src="pics/data_preprocessing.png" align="center" width="60%" height="60%"/>
+<img src="pics/data_preprocessing.png" align="center" />
 <br> <br>
 
 This workflow was written according to the following GATK official WDLs:
