@@ -9,13 +9,16 @@ Some workflows I wrote for my PhD research projects
 4. CNV pipelines
 5. Mutational signatures
 6. RNA-sequencing pipelines
- 
+7. To be continued ...
 
 
 ### Association studies
 1. Genome-wide association study (PLINK)
 2. Multi-ancestry Genome-wide association study 
 3. Multi-level modeling 
+4. To be continued ...
+
+(I'm still organizing my project code scripts... )
 
 
 
