@@ -1,0 +1,46 @@
+# Step 2 - METAL fixed-effect (inverse-variance) meta-analysis, 7 studies, no GC.
+# Same studies as ../0.txt; the Mexican file is replaced by the rebuilt input
+# from 01_fix_mexican_input.sh. Allele frequencies and total N are now tracked.
+
+SCHEME          STDERR
+# GENOMICCONTROL ON
+AVERAGEFREQ     ON
+MINMAXFREQ      ON
+CUSTOMVARIABLE  TotalSampleSize
+
+MARKER          ID
+ALLELE          A1 OTHER_ALLELE
+EFFECT          BETA
+STDERR          SE
+FREQLABEL       A1_FREQ
+LABEL           TotalSampleSize as OBS_CT
+
+# CCRLP_Kaiser
+PROCESS /project2/desmith_128/datasets/CCRLP/CCRLP_Kaiser_TOPMed_imputation/LAT/binary/remove_outlier/ck_0708.otherallele.txt
+
+# CCLS
+PROCESS /project2/desmith_128/datasets/CCLS/LAT/Imputed/binary/merged/remove_outlier/ccls_0708.otherallele.txt
+
+# Texas_SOL
+PROCESS /project2/desmith_128/datasets/Texas_SOL/Texas/Results/binary/remove_dup/merged2/remove_outlier/texas_sol_0708.otherallele.txt
+
+# St Jude
+# PROCESS /project2/desmith_128/datasets/St_Jude_MESA_SNP_6/Imputed/Results/binary/remove_dup2/merged_0325/remove_outlier/stjude_0708.otherallele.txt
+# source: /project2/lishaobo_902/publicDataShare/forTanxin/LAT_GWAS_SumStats/filtered/St_Jude_MESA_Rsq_filtered_finalized_GWAS_summary_stats.tsv
+# converted by 001_GWAS_convert_stjude.sh (BETA = log(OR), OTHER_ALLELE, A1_FREQ, OBS_CT added)
+PROCESS /project2/desmith_128/tanxin/scratch1_new/replication/meta-analysis2026_0924/revised_pipeline/input/St_Jude_MESA_Rsq_filtered.otherallele.txt
+
+# Guatemala
+PROCESS /project2/desmith_128/tanxin/scratch1_new/GUAT/revise_ref_impute/merge/guat_0708.otherallele.txt
+
+# CHLA_CALSEC_MEC
+PROCESS /project2/desmith_128/tanxin/scratch1_new/replication/meta-analysis2026_0924/revised_pipeline/input/CHLA_CALSEC_MEC_20PCs.otherallele.txt
+
+# Mexican 
+PROCESS /project2/desmith_128/tanxin/scratch1_new/replication/meta-analysis2026_0924/revised_pipeline/input/Mexican_20PCs.otherallele.txt
+
+# METAL appends "1" -> output/meta-analysis_nogc_20260928_1.tbl
+OUTFILE /project2/desmith_128/tanxin/scratch1_new/replication/meta-analysis2026_0924/revised_pipeline/output/meta-analysis_nogc_20260928_20PCs .tbl
+
+ANALYZE HETEROGENEITY
+QUIT
