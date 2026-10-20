@@ -8,7 +8,7 @@
 #SBATCH --ntasks=1
 #SBATCH --mem=65G
 #SBATCH --partition=epyc-64
-#SBATCH --array=1-7
+#SBATCH --array=1-6
 #SBATCH --account=desmith_488
 
 module load gcc/11.3.0

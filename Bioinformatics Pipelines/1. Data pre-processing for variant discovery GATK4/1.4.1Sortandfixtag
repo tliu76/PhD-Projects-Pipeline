@@ -9,7 +9,7 @@
 #SBATCH --ntasks=1
 #SBATCH --partition=wiemels
 #SBATCH --account=wiemels_260
-#SBATCH --array=4-6
+#SBATCH --array=1-6
 
 module load gcc/11.3.0
 module load openjdk

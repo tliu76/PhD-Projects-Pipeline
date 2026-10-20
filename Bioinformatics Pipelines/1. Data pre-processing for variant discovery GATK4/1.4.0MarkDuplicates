@@ -8,7 +8,7 @@
 #SBATCH --ntasks=1
 #SBATCH --mem=80G
 #SBATCH --partition=main
-#SBATCH --array=1-4
+#SBATCH --array=1-6
 #SBATCH --account=desmith_128
 
 module load gcc/11.3.0 
