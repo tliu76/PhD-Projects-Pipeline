@@ -2,6 +2,10 @@
 
 An HPC workflow that pre-processes matched tumor-normal whole-genome sequencing (WGS) FASTQ files into analysis-ready BAMs. See the [GATK documentation](https://gatk.broadinstitute.org/hc/en-us/articles/360035535912-Data-pre-processing-for-variant-discovery) for background.
 
+pipeline:
+
+<img src="pics/data_preprocessing.png" align="center" width="60%" height="60%"/>
+<br> <br>
 
 This workflow was written according to the following GATK official WDLs:
 
