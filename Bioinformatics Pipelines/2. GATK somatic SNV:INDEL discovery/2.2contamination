@@ -1,0 +1,76 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=END
+#SBATCH --output=/scratch1/tanxinli/output/2.2contamination_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/2.2contamination_%A_%a.errcd
+#SBATCH --job-name=2.2contamination
+#SBATCH -c 20
+#SBATCH --ntasks=1
+#SBATCH --mem=60G
+#SBATCH --partition=main
+#SBATCH --array=1-6
+
+module load gcc/11.3.0
+module load openjdk
+module load gatk/4.2.6.1
+
+ref=/project/desmith_488/kerenxu/refs/GATK_resource_bundle/resources_broad_hg38_v0_Homo_sapiens_assembly38.fasta
+interval_list=/project/desmith_488/tanxinli/refs/GATK_resource_bundle/wgs_calling_regions.hg38.interval_list
+gnomad=/project/desmith_488/tanxinli/refs/somatic_hg38/af-only-gnomad.hg38.vcf.gz
+pon=/project/desmith_488/tanxinli/refs/somatic_hg38/1000g_pon.hg38.vcf.gz
+variants_for_contamination=/project/desmith_488/tanxinli/somatic_hg38/small_exac_common_3.hg38.vcf.gz
+
+## input:
+tumor_path="/project/desmith_128/recordstudy/batch3/bqsr.bam"
+normal_path="/project/desmith_128/recordstudy/batch3/bqsr.bam"
+cd /project/desmith_128/recordstudy/batch3/bqsr.bam
+
+
+base=(`awk '{print $1}' batch3.id | sed -n ${SLURM_ARRAY_TASK_ID}p`)
+normal_bam="${base}.aligned.duplicates_marked.recalibrated.bam"
+
+sample_name=${base}
+cd /project/desmith_128/recordstudy/batch3/bqsr.bam
+input_name="${sample_name}"
+input_file="batch3.id"
+# Use awk to find the matching name from the second column
+matching_name=$(awk -v input="$input_name" '$1 == input {print $2}' "$input_file")
+tumor_bam="${matching_name}.aligned.duplicates_marked.recalibrated.bam"
+tumor_dir="/project/desmith_128/recordstudy/batch3/bqsr.bam"
+
+## output:
+normal_pileups="$base.pileups.table"
+tumor_pileups="${matching_name}.pileups.table"
+contamination_table="sample${matching_name}.contamination.table"
+segments_table="sample$matching_name.segments.table"
+
+### GetPileupSummaries
+srun gatk --java-options "-Xms20G -Djava.io.tmpdir=/scratch1/tanxinli/tmp/contamination/" \
+    GetPileupSummaries \
+    -R $ref \
+    -I $normal_path/$normal_bam \
+    -V $variants_for_contamination \
+    -L $variants_for_contamination \
+    -O /scratch1/tanxinli/tumoroutput/batch3/contamination/$normal_pileups \
+    --tmp-dir /scratch1/tanxinli/tmp/contamination
+
+srun gatk --java-options "-Xms20G -Djava.io.tmpdir=/scratch1/tanxinli/tmp/contamination/" \
+    GetPileupSummaries \
+    -R $ref \
+    -I $tumor_path/$tumor_bam \
+    -V $variants_for_contamination \
+    -L $variants_for_contamination \
+    -O /scratch1/tanxinli/tumoroutput/batch3/contamination/$tumor_pileups \
+    --tmp-dir /scratch1/tanxinli/tmp/contamination
+
+
+## CalculateContamination
+srun gatk --java-options "-Xms22G -Djava.io.tmpdir=/scratch1/tanxinli/tmp/contamination" \
+    CalculateContamination \
+    -I /scratch1/tanxinli/tumoroutput/batch3/contamination/$tumor_pileups \
+    -O /scratch1/tanxinli/tumoroutput/batch3/contamination/$contamination_table \
+    --tumor-segmentation /scratch1/tanxinli/tumoroutput/batch3/contamination/$segments_table \
+    -matched /scratch1/tanxinli/tumoroutput/batch3/contamination/$normal_pileups \
+    --tmp-dir /scratch1/tanxinli/tmp/contamination
+
+

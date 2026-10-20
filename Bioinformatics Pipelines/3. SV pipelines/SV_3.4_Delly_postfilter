@@ -1,0 +1,28 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=END
+#SBATCH --output=/scratch1/tanxinli/output/3.4_dellypostfilter_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/3.4_dellypostfilter_%A_%a.errcd
+#SBATCH --job-name=3.4all_dellypostfilter
+#SBATCH -c 20
+#SBATCH --ntasks=1
+#SBATCH --mem=30G
+#SBATCH --partition=main
+#SBATCH --array=1-6
+
+module purge
+eval "$(conda shell.bash hook)"
+conda activate /home1/tanxinli/miniconda3/envs/delly
+
+cd /scratch1/tanxinli/tumoroutput/batch3sv/delly.out/delly.geno/
+
+## input:
+input_bcf=(`ls *.geno.bcf | sed -n ${SLURM_ARRAY_TASK_ID}p`)
+base=$(basename ${input_bcf} .geno.bcf)
+sample_list=/scratch1/tanxinli/tumoroutput/batch3sv/delly.out/sample.tsv
+
+## output:
+output_bcf=/scratch1/tanxinli/tumoroutput/batch3sv/delly.out/delly.post.somatic/$base.somatic.bcf
+
+
+delly filter -f somatic -o $output_bcf -s $sample_list $input_bcf

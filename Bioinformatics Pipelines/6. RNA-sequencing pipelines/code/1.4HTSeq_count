@@ -1,0 +1,28 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=END
+#SBATCH --output=/scratch1/tanxinli/output/sortstar_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/sortstar_%A_%a.errcd
+#SBATCH --job-name=HTSeq_count
+#SBATCH -c 20
+#SBATCH --ntasks=1
+#SBATCH --mem=65G
+#SBATCH --partition=epyc-64
+#SBATCH --account=desmith_488
+#SBATCH --array=1-21
+
+module purge
+module load gcc/11.3.0
+
+cd /scratch1/tanxinli/rnaseq_out/MarkDup.sorted.bam/
+gtf="/project/desmith_488/tanxinli/SINGULARITY_CACHEDIR/mdall/mdall/Homo_sapiens.GRCh38.V102.withChr.gtf"
+input_bam=(`ls /scratch1/tanxinli/rnaseq_out/MarkDup.sorted.bam/*sorted.aligned.bam  | sed -n ${SLURM_ARRAY_TASK_ID}p`)
+base=$(basename ${input_bam} .MarkDup.sorted.aligned.bam)
+output_dir=/scratch1/tanxinli/rnaseq_out/HTSeq
+output_HTSeq_count="$base.HTSeq"
+log=/scratch1/tanxinli/rnaseq_out/log/HTSeq_count.log/$base.HTSeq_count.log
+
+singularity exec --bind /project/desmith_488/tanxinli/,/scratch1/tanxinli/,/project/desmith_128/recordstudy/rna_seq/ /project/desmith_488/tanxinli/SINGULARITY_CACHEDIR/mdall/mdall/app_gulab_rnaseq-20231121.sif \
+htseq-count -m intersection-strict -f bam -r pos -s no -a 10 ${input_bam} ${gtf} 1> ${output_dir}/${output_HTSeq_count} 2> ${log}
+
+#https://htseq.readthedocs.io/en/release_0.11.1/count.html

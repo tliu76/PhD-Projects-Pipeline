@@ -1,0 +1,21 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=ALL
+#SBATCH --output=/scratch1/tanxinli/output/RNAseqCNV_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/RNAseqCNV_%A_%a.errcd
+#SBATCH --job-name=RNAseqCNV
+#SBATCH -c 20
+#SBATCH --ntasks=1
+#SBATCH --mem=65G
+#SBATCH --partition=main
+#SBATCH --account=desmith_488
+#SBATCH --array=1-21
+
+
+module purge
+module load gcc/11.3.0
+
+cat <(echo 'out_dir = "{params.outdir}"') <(echo 'count_dir = "{params.count_dir}"') <(echo 'snv_dir = "{params.snv_dir}"')  > {params.config_file}
+        cat <(echo '{params.sample} {params.htseq_file} {params.vcf_file}') > {params.meta_file}
+Rscript_GEP {params.script} {params.config_file} {params.meta_file} &> {log}
+ 

@@ -1,0 +1,40 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=ALL
+#SBATCH --output=/scratch1/tanxinli/output/1.2.1Tsortabam_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/1.2.1Tsortabam_%A_%a.errcd
+#SBATCH --job-name=1.2.1Tsortalignedbam
+#SBATCH -c 20
+#SBATCH --ntasks=1
+#SBATCH --mem=60G
+#SBATCH --partition=epyc-64
+#SBATCH --array=1-2
+#SBATCH --account=desmith_128
+
+
+module load gcc 
+module load openjdk
+module load gatk
+
+set -e 
+set -u 
+set -x
+set -o pipefail
+
+
+cd /scratch1/tanxinli/tumoroutput/batch3/aligned.bam/
+
+# input 
+input_bam=(`cat alignedname2 | sed -n ${SLURM_ARRAY_TASK_ID}p`)
+base=$(basename ${input_bam} .aligned.bam)
+
+# output 
+sorted_bam_name="$base.sorted.aligned.bam"
+srun gatk --java-options "-Xms35G -Djava.io.tmpdir=/scratch1/tanxinli/tmp/sortsam" \
+    SortSam \
+    --INPUT /scratch1/tanxinli/tumoroutput/batch3/aligned.bam/$input_bam \
+    --OUTPUT /scratch1/tanxinli/tumoroutput/batch3/sorted.aligned.bam/$sorted_bam_name \
+    --SORT_ORDER coordinate \
+    --TMP_DIR /scratch1/tanxinli/tmp/sortsam
+
+rm -rf $input_bam

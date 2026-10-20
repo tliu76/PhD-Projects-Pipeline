@@ -1,0 +1,31 @@
+#!/bin/bash
+#SBATCH --time=00:06:00
+#SBATCH --mail-type=END
+#SBATCH --output=/scratch1/tanxinli/output/1.5HTSeqDUX4_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/1.5HTSeqDUX4_%A_%a.errcd
+#SBATCH --job-name=1.5HTSeqDUX4
+#SBATCH -c 20
+#SBATCH --ntasks=1
+#SBATCH --mem=54G
+#SBATCH --partition=debug
+#SBATCH --account=desmith_488
+
+module purge
+module load gcc/11.3.0
+module load perl/5.36.0
+
+for i in {1..21}
+do
+    echo "Welcome $i times"
+cd /scratch1/tanxinli/rnaseq_out/MarkDup.sorted.bam/
+input_bam=(`ls /scratch1/tanxinli/rnaseq_out/MarkDup.sorted.bam/*sorted.aligned.bam  | sed -n ${i}p`)
+base=$(basename ${input_bam} .MarkDup.sorted.aligned.bam)
+input_htseq="/scratch1/tanxinli/rnaseq_out/HTSeq/${base}.HTSeq"
+output_HTSeq="/scratch1/tanxinli/rnaseq_out/HTSeq/${base}.DUX4patched.HTSeq"
+
+bed_DUX4="/project/desmith_488/tanxinli/SINGULARITY_CACHEDIR/mdall/mdall/Homo_sapiens.GRCh38.V102.withChr.DUX4.bed"
+
+singularity exec --bind /project/desmith_488/tanxinli/,/scratch1/tanxinli/,/project/desmith_128/recordstudy/rna_seq/ /project/desmith_488/tanxinli/SINGULARITY_CACHEDIR/mdall/mdall/app_gulab_rnaseq-20231121.sif \
+perl /scratch1/tanxinli/rnaseq/RNAseq/scripts/HTSeqDUX4patch.pl -f $bed_DUX4 -b $input_bam -h $input_htseq -o $output_HTSeq
+
+done

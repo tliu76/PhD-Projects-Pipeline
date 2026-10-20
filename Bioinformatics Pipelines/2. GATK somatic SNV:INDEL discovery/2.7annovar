@@ -1,0 +1,46 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=END
+#SBATCH --output=/scratch1/tanxinli/output/3.Annovar_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/3.Annovar_%A_%a.errcd
+#SBATCH --job-name=annovar
+#SBATCH -c 15
+#SBATCH --ntasks=1
+#SBATCH --mem=59G
+#SBATCH --partition=main
+#SBATCH --account=desmith_128
+
+export annovar=/project/desmith_488/tanxinli/tools/annovar
+
+module load gcc/11.3.0  openblas/0.3.20
+
+cd /project/desmith_128/recordstudy/batch3/BCFtools.filter.tumoronly.autosomal
+
+#convert 
+
+for i in {1..6}
+do
+   echo "Welcome $i times"
+## input:
+  input_vcf=(`ls *.funcotated.bcftools.tumoronly.chr1to22.vcf | sed -n ${i}p`)
+  echo ${input_vcf}
+  base=$(basename ${input_vcf} .funcotated.bcftools.tumoronly.chr1to22.vcf)
+  prefix="sample"
+  sample_name=${base#"$prefix"}
+  output=${base}.annovar.input
+  perl $annovar/convert2annovar.pl  $input_vcf  -format vcf  > $output
+done
+
+#annotate
+
+cd /project/desmith_128/recordstudy/batch3/BCFtools.filter.tumoronly.autosomal
+for i in {1..6}
+do
+   echo "Welcome $i times"
+## input:
+  input=(`ls *.annovar.input | sed -n ${i}p`)
+  echo ${input}
+  base=$(basename ${input} .annovar.input)
+  perl $annovar/annotate_variation.pl  -geneanno -dbtype refGene  -buildver hg38  $input  $annovar/humandb/
+done
+

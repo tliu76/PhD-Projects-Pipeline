@@ -1,0 +1,18 @@
+################################################################################################
+#Parameters #######################################################################################
+dir_script:         "/scratch1/tanxinli/rnaseq/RNAseq/scripts"
+ref_fa:             "/project/desmith_488/tanxinli/refs/rnaseq/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.fna"
+gtf:                "/project/desmith_488/tanxinli/SINGULARITY_CACHEDIR/mdall/mdall/Homo_sapiens.GRCh38.V102.withChr.gtf"
+bed_DUX4:           "/project/desmith_488/tanxinli/SINGULARITY_CACHEDIR/mdall/mdall/Homo_sapiens.GRCh38.V102.withChr.DUX4.bed"
+ref_star:           "/project/desmith_488/tanxinli/refs/rnaseq/index_star"
+ref_fusioncatcher:  "/project/desmith_488/tanxinli/fusioncatcher/human_v102"
+ref_RNApeg_fa:      "/project/desmith_488/tanxinli/refs/rnaseq/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.fna"
+ref_RNApeg_flat:    "/project/desmith_488/tanxinli/SINGULARITY_CACHEDIR/mdall/mdall/refFlat.txt"
+
+
+
+cores_star:             8
+cores_samtoolsSort:     8
+cores_fusioncatcher:    8
+cores_RNApeg:           8
+

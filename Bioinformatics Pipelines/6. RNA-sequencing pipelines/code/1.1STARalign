@@ -1,0 +1,112 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=END
+#SBATCH --output=/scratch1/tanxinli/output/star_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/star_%A_%a.errcd
+#SBATCH --job-name=star
+#SBATCH -c 20
+#SBATCH --ntasks=1
+#SBATCH --mem=65G
+#SBATCH --partition=main
+#SBATCH --account=desmith_488
+#SBATCH --array=1-21
+
+module purge
+module load gcc/11.3.0
+
+
+PWD=/project/desmith_488/tanxinli/SINGULARITY_CACHEDIR/mdall/mdall
+dir_out="/scratch1/tanxinli/rnaseq_out/star"
+star_ref="/project/desmith_488/tanxinli/refs/rnaseq/index_star"
+
+cd /project/desmith_128/recordstudy/rna_seq/F22FTSUSAT0580_HOMrdeiR
+
+fastq1=(`ls /project/desmith_128/recordstudy/rna_seq/F22FTSUSAT0580_HOMrdeiR/*T*/*_1.fq.gz  | sed -n ${SLURM_ARRAY_TASK_ID}p`)
+base=$(basename ${fastq1} _1.fq.gz)
+fastq2=(`echo $fastq1 | sed 's/_1.fq.gz/_2.fq.gz/g'`)
+sample=$base
+log="/scratch1/tanxinli/rnaseq_out/log/staralign/$sample.star.log"
+rg="ID:${sample} PL:ILLUMINA PU:ILLUMINA LB:RNAseq SM:${sample}"
+singularity exec --bind $PWD,/project/desmith_488/tanxinli/,/scratch1/tanxinli/,/project/desmith_128/recordstudy/rna_seq/,/scratch1/tanxinli/rnaseq_out/star /project/desmith_488/tanxinli/SINGULARITY_CACHEDIR/mdall/mdall/app_gulab_rnaseq-20231121.sif \
+STAR \
+        --twopassMode Basic \
+        --runThreadN 15 \
+        --readFilesCommand zcat \
+        --limitOutSAMoneReadBytes 90000000 \
+        --outSAMtype BAM Unsorted \
+        --outSAMstrandField intronMotif \
+        --outSAMunmapped Within \
+        --outSAMmapqUnique 60 \
+        --outSAMmultNmax 1 \
+        --outReadsUnmapped None \
+        --outMultimapperOrder Random \
+        --outSAMattributes NH HI AS nM NM MD \
+        --outSAMattrRGline $rg \
+        --outFilterType BySJout \
+        --outFilterMultimapNmax 100 \
+        --outFilterMismatchNmax 999 \
+        --outFilterMismatchNoverReadLmax 0.04 \
+        --alignIntronMin 20 \
+        --alignSJstitchMismatchNmax 5 -1 5 5 \
+        --alignIntronMax 1000000 \
+        --alignMatesGapMax 1000000 \
+        --alignSJoverhangMin 8 \
+        --alignSJDBoverhangMin 4 \
+        --alignInsertionFlush Right \
+        --chimOutType Junctions \
+        --chimSegmentMin 12 \
+        --chimJunctionOverhangMin 12 \
+        --chimSegmentReadGapMax 3 \
+        --chimMultimapNmax 100 \
+        --chimMultimapScoreRange 10 \
+        --chimNonchimScoreDropMin 10 \
+        --chimOutJunctionFormat 1 \
+        --peOverlapNbasesMin 12 \
+        --peOverlapMMp 0.1 \
+        --outFileNamePrefix ${dir_out}/${sample} \
+        --genomeDir $star_ref \
+        --genomeLoad NoSharedMemory \
+        --readFilesIn ${fastq1} ${fastq2}  &> ${log}
+        
+        
+        
+# STAR \
+#        --twopassMode Basic \
+#        --runThreadN 40 \
+#        --readFilesCommand zcat \
+#        --limitOutSAMoneReadBytes 90000000 \
+#        --outSAMtype BAM SortedByCoordinate   \
+#        --outSAMstrandField intronMotif \
+#        --outSAMunmapped Within \
+#        --outSAMmapqUnique 60 \
+#        --outSAMmultNmax 1 \
+#        --outReadsUnmapped None \
+#        --outMultimapperOrder Random \
+#        --outSAMattributes NH HI AS nM NM MD \
+#        --outSAMattrRGline $rg \
+#        --outFilterType BySJout \
+#        --outFilterMultimapNmax 100 \
+#        --outFilterMismatchNmax 999 \
+#       --outFilterMismatchNoverReadLmax 0.04 \
+#        --alignIntronMin 20 \
+#        --alignSJstitchMismatchNmax 5 -1 5 5 \
+#        --alignIntronMax 1000000 \
+#        --alignMatesGapMax 1000000 \
+#       --alignSJoverhangMin 8 \
+#      --alignSJDBoverhangMin 4 \
+#        --alignInsertionFlush Right \
+#        --chimOutType Junctions \
+#        --chimSegmentMin 12 \
+#        --chimJunctionOverhangMin 12 \
+#        --chimSegmentReadGapMax 3 \
+#        --chimMultimapNmax 100 \
+#        --chimMultimapScoreRange 10 \
+#        --chimNonchimScoreDropMin 10 \
+#        --chimOutJunctionFormat 1 \
+#        --peOverlapNbasesMin 12 \
+#        --peOverlapMMp 0.1 \
+#        --outFileNamePrefix ${dir_out}/${sample} \
+#        --genomeDir $star_ref \
+#        --genomeLoad NoSharedMemory \
+#        --readFilesIn ${fastq1} ${fastq2} \
+#        --sjdbOverhang 149 &> ${log}

@@ -1,0 +1,26 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=ALL
+#SBATCH --output=/scratch1/tanxinli/output/fastqc_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/fastqc_%A_%a.errcd
+#SBATCH --job-name=fastqc
+#SBATCH -c 15
+#SBATCH --nodes 1
+#SBATCH --ntasks 1
+#SBATCH --mem=59G
+#SBATCH --partition main
+#SBATCH --account=desmith_488
+#SBATCH --array=1-21
+
+
+module load   gcc/11.3.0
+module load  fastqc/0.11.9 
+module load openjdk
+
+cd /project/desmith_128/recordstudy/rna_seq/F22FTSUSAT0580_HOMrdeiR
+fastq1=(`find . -name "*_1.fq.gz" | sed -n ${SLURM_ARRAY_TASK_ID}p`)
+DIR=$(dirname ${fastq1})
+base=$(basename ${fastq1} _1.fq.gz)
+fastq2="${DIR}/$(basename ${fastq1} _1.fq.gz)_2.fq.gz"
+fastqc --noextract $fastq1 $fastq2 --outdir /project/desmith_128/recordstudy/rna_seq/fastqc.out -t 15
+

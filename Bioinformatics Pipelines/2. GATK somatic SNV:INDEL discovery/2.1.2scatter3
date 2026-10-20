@@ -1,0 +1,59 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=END
+#SBATCH --output=/scratch1/tanxinli/output/3scatter_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/3scatter_%A_%a.errcd
+#SBATCH --job-name=3scatter
+#SBATCH -c 20
+#SBATCH --ntasks=1
+#SBATCH --mem=64G
+#SBATCH --partition=main
+#SBATCH --array=1-6
+#SBATCH --account=desmith_488
+
+module load gcc/11.3.0 openblas/0.3.20
+module load openjdk
+module load gatk/4.2.6.1
+
+
+
+ref=/project/desmith_488/kerenxu/refs/GATK_resource_bundle/resources_broad_hg38_v0_Homo_sapiens_assembly38.fasta
+interval_list=/project/desmith_488/tanxinli/refs/GATK_resource_bundle/interval_file/0003-scattered.interval_list
+gnomad=/project/desmith_488/tanxinli/refs/somatic_hg38/af-only-gnomad.hg38.vcf.gz
+pon=/project/desmith_488/tanxinli/refs/somatic_hg38/1000g_pon.hg38.vcf.gz
+
+cd /project/desmith_128/recordstudy/batch3/bqsr.bam
+
+##input:
+#normal_bam=(`ls L00*.aligned.duplicates_marked.recalibrated.bam | sed -n ${SLURM_ARRAY_TASK_ID}p`)
+
+normal_bam=(`cat normal.id | sed -n ${SLURM_ARRAY_TASK_ID}p`)
+base=$(basename ${normal_bam} .aligned.duplicates_marked.recalibrated.bam)
+normal_name=${base}
+
+#find bam header for tumor and matched normal bam files:
+
+input_name="${normal_name}"
+input_file="batch3.id"
+matching_name=$(awk -v input="$input_name" '$1 == input {print $2}' "$input_file")
+
+
+output_vcf="sample$matching_name.vcf.gz"
+output_bam="sample$matching_name.tumor_normal.bam"
+output_tar_gz="sample$matching_name.f1r2.tar.gz"
+
+tumor_bam="${matching_name}.aligned.duplicates_marked.recalibrated.bam"
+srun gatk --java-options "-Xms59G -Djava.io.tmpdir=/scratch1/tanxinli/tmp/mtscatter3/" \
+         Mutect2 \
+            -R $ref \
+            -I $tumor_bam \
+            -I $normal_bam \
+            -normal ${normal_name} \
+            --germline-resource $gnomad \
+            -pon $pon \
+            -L $interval_list \
+            -O /scratch1/tanxinli/tumoroutput/batch3/mutect2_out/scatter3/$output_vcf \
+            --bam-output /scratch1/tanxinli/tumoroutput/batch3/mutect2_out/scatter3/$output_bam\
+            --f1r2-tar-gz /scratch1/tanxinli/tumoroutput/batch3/mutect2_out/scatter3/$output_tar_gz\
+            --tmp-dir /scratch1/tanxinli/tmp/mtscatter3
+

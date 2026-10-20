@@ -1,0 +1,28 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=ALL
+#SBATCH --output=/scratch1/tanxinli/output/smoove_unionsites_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/smoove_unionsites_%A_%a.errcd
+#SBATCH --job-name=smoove_unionsites
+#SBATCH -c 20
+#SBATCH --ntasks=1
+#SBATCH --mem=30G
+#SBATCH --partition=main
+
+
+srun hostname
+module purge
+#export PATH="/project/desmith_488/kerenxu/SINGULARITY_CACHEDIR/:$PATH"
+#export PATH="/home1/tanxinli/:$PATH"
+#export SINGULARITY_CACHEDIR=/home1/tanxinli/.singularity
+export PATH="/home1/tanxinli/:$PATH"
+#export SINGULARITY_BIND=/home1/tanxinli,/project/desmith_488/kerenxu/refs/SV_resource/,/project/desmith_488/kerenxu/refs/GATK_resource_bundle/,/project/desmith_488/
+export SINGULARITY_BIND=/home1/tanxinli,/project/desmith_488/kerenxu/,/scratch1/tanxinli/
+
+cd /scratch1/tanxinli/tumoroutput/batch3sv/smoove.out
+ref=/project/desmith_488/tanxinli/refs/GATK_resource_bundle/resources_broad_hg38_v0_Homo_sapiens_assembly38.fasta
+exclude_bed=/project/desmith_488/tanxinli/refs/SV_resource/exclude.cnvnator_100bp.GRCh38.20170403.bed
+threads=20
+
+# Get the union of sites across all samples
+singularity exec /home1/tanxinli/smoove_latest.sif smoove merge --name merged.smoove  -f $ref --outdir ./ *.genotyped.vcf.gz

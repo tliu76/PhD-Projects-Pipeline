@@ -1,0 +1,17 @@
+
+
+cd /scratch1/tanxinli/tumoroutput/batch3sv/manta.config
+for i in {1..6}
+do
+   echo "Welcome $i times"
+## input:
+sample_name=(`cat /scratch1/tanxinli/tumoroutput/batch3sv/manta.config/list.id | sed -n ${i}p`)
+ 
+cp /scratch1/tanxinli/tumoroutput/batch3sv/manta.config/$sample_name/results/variants/somaticSV.vcf.gz \
+ /scratch1/tanxinli/tumoroutput/batch3sv/manta.config/manta.out/$sample_name.somaticSV.vcf.gz
+
+cp /scratch1/tanxinli/tumoroutput/batch3sv/manta.config/$sample_name/results/variants/somaticSV.vcf.gz.tbi \
+ /scratch1/tanxinli/tumoroutput/batch3sv/manta.config/manta.out/$sample_name.somaticSV.vcf.gz.tbi
+
+done
+

@@ -1,0 +1,50 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=ALL
+#SBATCH --output=/scratch1/tanxinli/output/1.4.1TSortAndFixTags_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/1.4.1TSortAndFixTags_%A_%a.errcd
+#SBATCH --job-name=1.4.1TSortAndFixTags
+#SBATCH -c 20
+#SBATCH --mem=233G
+#SBATCH --ntasks=1
+#SBATCH --partition=wiemels
+#SBATCH --account=wiemels_260
+#SBATCH --array=4-6
+
+module load gcc/11.3.0
+module load openjdk
+module load gatk/4.2.6.1
+
+export PATH="/project/desmith_488/tanxinli/tools/gatk/gatk-4.1.8.1:$PATH"
+srun hostname
+
+cd  /scratch1/tanxinli/tumoroutput/batch3/markduplicates
+
+ref=/project/desmith_488/kerenxu/refs/GATK_resource_bundle/resources_broad_hg38_v0_Homo_sapiens_assembly38.fasta    
+# input 
+input_bam=(`cat /scratch1/tanxinli/tumoroutput/batch3/markduplicates/dupmark1 | sed -n ${SLURM_ARRAY_TASK_ID}p`)
+base=$(basename ${input_bam} .aligned.unsorted.duplicates_marked.bam)
+
+# output 
+output_bam="$base.aligned.duplicate_marked.sorted.bam"
+
+gatk --java-options "-Xms160G -Djava.io.tmpdir=/scratch1/tanxinli/tmp/sortandfix" \
+      SortSam \
+      --INPUT /scratch1/tanxinli/tumoroutput/batch3/markduplicates/$input_bam \
+      --OUTPUT /dev/stdout \
+      --SORT_ORDER coordinate \
+      --CREATE_INDEX false \
+      --CREATE_MD5_FILE false \
+      --TMP_DIR /scratch1/tanxinli/tmp/sortandfix \
+    | \
+gatk --java-options "-Xms160G -Djava.io.tmpdir=/scratch1/tanxinli/tm/sortandfix" \
+      SetNmMdAndUqTags \
+      --INPUT /dev/stdin \
+      --OUTPUT /project/desmith_128/recordstudy/batch3/SortAndFixTags/$output_bam \
+      --CREATE_INDEX true \
+      --CREATE_MD5_FILE true \
+      --REFERENCE_SEQUENCE $ref \
+      --TMP_DIR /scratch1/tanxinli/tmp/sortandfix
+
+
+

@@ -1,0 +1,47 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=END
+#SBATCH --output=/scratch1/tanxinli/output/3.1Tdellypersamplecall_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/3.1Tdellypersamplecall_%A_%a.errcd
+#SBATCH --job-name=3.1Tdellycall
+#SBATCH -c 20
+#SBATCH --ntasks=1
+#SBATCH --mem=10G
+#SBATCH --partition=main
+#SBATCH --array=1-6
+#SBATCH --account=desmith_128
+
+
+
+module purge
+eval "$(conda shell.bash hook)"
+conda activate /home1/tanxinli/miniconda3/envs/delly
+
+cd  /project/desmith_128/recordstudy/batch3/bqsr.bam
+ref=/project/desmith_488/tanxinli/refs/GATK_resource_bundle/resources_broad_hg38_v0_Homo_sapiens_assembly38.fasta
+exclude_bed=/project/desmith_488/tanxinli/refs/SV_resource/human.hg38.excl.tsv
+threads=20
+
+
+## input:
+normal_dir="/project/desmith_128/recordstudy/batch3/bqsr.bam"
+## input:
+#normal_bam=(`ls L00*.aligned.duplicates_marked.recalibrated.bam | sed -n ${SLURM_ARRAY_TASK_ID}p`)
+#base=$(basename ${normal_bam} .aligned.duplicates_marked.recalibrated.bam)
+base=(`awk '{print $1}' batch3.id | sed -n ${SLURM_ARRAY_TASK_ID}p`)
+normal_bam="${base}.aligned.duplicates_marked.recalibrated.bam"
+
+sample_name=${base}
+input_name="${sample_name}"
+input_file="batch3.id"
+# Use awk to find the matching name from the second column
+matching_name=$(awk -v input="$input_name" '$1 == input {print $2}' "$input_file")
+
+tumor_bam="${matching_name}.aligned.duplicates_marked.recalibrated.bam"
+tumor_dir="/project/desmith_128/recordstudy/batch3/bqsr.bam"
+
+
+
+delly call -x $exclude_bed -o /scratch1/tanxinli/tumoroutput/batch3sv/delly.out/$sample_name.bcf \
+-g $ref $tumor_dir/$tumor_bam $normal_dir/$normal_bam
+

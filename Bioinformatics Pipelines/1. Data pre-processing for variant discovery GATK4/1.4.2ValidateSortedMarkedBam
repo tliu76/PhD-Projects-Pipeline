@@ -1,0 +1,28 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=END
+#SBATCH --output=/scratch1/tanxinli/output/1.4.2TValidateSortedMarkedBam_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/1.4.2TValidateSortedMarkedBam_%A_%a.errcd
+#SBATCH --job-name=1.4.2TValidateSortedMarkedBam
+#SBATCH -c 15
+#SBATCH --ntasks=1
+#SBATCH --mem=70G
+#SBATCH --partition=main
+#SBATCH --array=1-16
+
+module load gcc/11.3.0
+module load openjdk
+module load gatk/4.2.6.1
+
+srun hostname
+
+cd /scratch2/tanxinli/tumoroutput/batch2/SortAndFixTags
+# input 
+input_bam=(`ls *.bam | sed -n ${SLURM_ARRAY_TASK_ID}p`)
+
+srun gatk --java-options "-Xms55G -Djava.io.tmpdir=/scratch2/tanxinli/tmp/ValidateSortedMarkedBam" \
+    ValidateSamFile \
+    --INPUT $input_bam \
+    --MODE SUMMARY \
+    --TMP_DIR /scratch1/tanxinli/tmp/ValidateSortedMarkedBam
+

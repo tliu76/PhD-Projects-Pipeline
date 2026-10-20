@@ -1,0 +1,22 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=END
+#SBATCH --output=/scratch1/tanxinli/output/create_dict_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/create_dict_%A_%a.errcd
+#SBATCH --job-name=create_dict
+#SBATCH -c 20
+#SBATCH --ntasks=1
+#SBATCH --mem=30G
+#SBATCH --partition=main
+#SBATCH --account=desmith_488
+
+
+
+module purge
+module load gcc/11.3.0
+
+cd /project/desmith_488/tanxinli/refs/rnaseq/
+singularity exec --bind /project/desmith_488/tanxinli/,/project/desmith_488/tanxinli/,/scratch1/tanxinli/,/project/desmith_128/recordstudy/rna_seq/ /project/desmith_488/tanxinli/SINGULARITY_CACHEDIR/mdall/mdall/app_gulab_rnaseq-20231121.sif \
+gatk CreateSequenceDictionary \
+    -R /project/desmith_488/tanxinli/refs/rnaseq/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.fna \
+    -O /project/desmith_488/tanxinli/refs/rnaseq/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.dict

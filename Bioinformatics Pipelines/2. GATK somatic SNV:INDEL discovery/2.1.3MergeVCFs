@@ -1,0 +1,38 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=END
+#SBATCH --output=/scratch1/tanxinli/output/2.1.3MergeVCFs_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/2.1.3MergeVCFs_%A_%a.errcd
+#SBATCH --job-name=2.1.3MergeVCFs
+#SBATCH -c 15
+#SBATCH --ntasks=1
+#SBATCH --array=1-6
+#SBATCH --mem=7G
+#SBATCH --partition=main
+
+module load gcc/11.3.0
+module load openjdk
+module load gatk/4.2.6.1
+cd /scratch1/tanxinli/tumoroutput/batch3/mutect2_out/scatter0
+
+## input:
+input_vcf=(`ls *.vcf.gz | sed -n ${SLURM_ARRAY_TASK_ID}p`)
+base=$(basename ${input_vcf} .vcf.gz)
+prefix="sample"
+sample_name=${base#"$prefix"}
+## output:
+output_vcf="$input_vcf"
+
+## change directory:
+cd /scratch1/tanxinli/tumoroutput/batch3/mutect2_out/
+## merge:
+srun gatk --java-options "-Xms3G -Djava.io.tmpdir=/scratch1/tanxinli/tmp/MergeVCFs" \
+    MergeVcfs \
+    -I ./scatter0/$input_vcf \
+    -I ./scatter1/$input_vcf \
+    -I ./scatter2/$input_vcf \
+    -I ./scatter3/$input_vcf \
+    -I ./scatter4/$input_vcf \
+    -O ./gather/$output_vcf \
+    --TMP_DIR /scratch1/tanxinli/tmp/MergeVCFs
+

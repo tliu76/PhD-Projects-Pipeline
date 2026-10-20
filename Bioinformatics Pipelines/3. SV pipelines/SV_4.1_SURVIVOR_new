@@ -1,0 +1,259 @@
+module load gcc/11.3.0 openblas/0.3.20
+module load openjdk
+module load gatk/4.2.6.1
+module load bcftools/1.14
+module load htslib 
+
+
+cd /scratch1/tanxinli/tumoroutput/batch3sv/smoove.out/results_genotyped
+
+# filter each vcf for lumpy
+#only for 6 tumor-normal pairs 
+for i in {1..6}
+do
+   echo "Welcome $i times"
+## input:
+input_vcf=(`ls *-smoove.genotyped.vcf.gz | sed -n ${i}p`)
+base=$(basename ${input_vcf} -joint-smoove.genotyped.vcf.gz )
+prefix="sample"
+sample_name=${base#"$prefix"}
+output_vcf="$sample_name.somaticSV.smoove.vcf.gz"
+input_name="${sample_name}"
+input_file="batch3.id"
+# Use awk to find the matching name from the second column *tumor bam
+matching_name=$(awk -v input="$input_name" '$1 == input {print $2}' "$input_file")
+#check
+if [ -n "$matching_name" ]; then
+    echo "Matching name in the second column: $matching_name"
+else
+    echo "Name not found in the second column."
+fi
+
+
+bcftools view $input_vcf -Ou -i 'FMT/GT[1]=="0/0"' |\
+bcftools view -Ou -i 'FMT/GT[0]=="0/1"||FMT/GT[0]=="1/1"'| \
+bcftools view -s ^$matching_name  -o $output_vcf -O z --threads 15
+
+done
+
+##filter the output   exclude  normal 
+####################################################
+
+cd /scratch1/tanxinli/tumoroutput/batch3sv/smoove.out/results_genotyped
+
+# filter each vcf for lumpy
+#only for 6 tumor-normal pairs
+for i in {1..6}
+do
+   echo "Welcome $i times"
+## input:
+input_vcf=(`ls *-joint-smoove.genotyped.vcf.gz | sed -n ${i}p`)
+base=$(basename ${input_vcf} -joint-smoove.genotyped.vcf.gz)
+prefix="sample"
+normal_name=${base#"$prefix"}
+
+input_name="${normal_name}"
+input_file="batch3.id"
+# Use awk to find the matching name from the second column *tumor bam
+tumor_name=$(awk -v input="$input_name" '$1 == input {print $2}' "$input_file")
+
+#check
+if [ -n "$tumor_name" ]; then
+    echo "Matching name in the first column: $tumor_name"
+else
+    echo "Name not found in the second column."
+fi
+output_vcf="$tumor_name.somaticSV.smoove.vcf.gz"
+
+bcftools view $input_vcf -Ou -i 'FMT/GT[1]=="0/0"' |\
+bcftools view -Ou -i 'FMT/GT[0]=="0/1"||FMT/GT[0]=="1/1"'| \
+bcftools view -s ^${normal_name}  -o /scratch1/tanxinli/tumoroutput/batch3sv/survivor.out/lumpy.passed.vcf/$output_vcf -O z --threads 15
+
+done
+
+###########################################################################
+#another way
+module load gcc/11.3.0 openblas/0.3.20
+module load openjdk
+module load gatk/4.2.6.1
+module load bcftools/1.14
+module load htslib
+
+#bcftools view sample200101-smoove.genotyped.vcf.gz -Ou -i 'FMT/GT[1]=="0/0"' |\
+#bcftools view -Ou -i 'FMT/GT[0]=="0/1"||FMT/GT[0]=="1/1"' |  \
+#bcftools view -s ^L0001_01RC_G -o sample200101.somaticSV.smoove.vcf.gz \
+# -O z --threads 15
+
+#bcftools view sample200101-smoove.genotyped.vcf.gz -Ou -i 'FMT/GT[1]=="0/0"' | bcftools view -Ou -i 'FMT/GT[0]=="0/1"||
+#FMT/GT[0]=="1/1"' | bcftools  view -s ^L0001_01RC_G -o sample200101.somaticSV.smoove.vcf.gz  -O z --threads 15
+###########################################################################
+
+
+## bgzip -d vcf.gz in a directory decompress a vcf.gz file:
+cd /scratch1/tanxinli/tumoroutput/batch3sv/survivor.out/lumpy.passed.vcf
+for f in *.somaticSV.smoove.vcf.gz; do
+   bgzip -d "$f"
+done
+
+## sort using bcftools 
+for i in {1..6}
+do
+   echo "Welcome $i times"
+## input:
+input_vcf=(`ls *.somaticSV.smoove.vcf | sed -n ${i}p`)
+base=$(basename ${input_vcf} .somaticSV.smoove.vcf)
+output_vcf="$base.somaticSV.smoove.sorted.vcf"
+
+bcftools sort $input_vcf > /scratch1/tanxinli/tumoroutput/batch3sv/survivor.out/lumpy.passed.vcf/$output_vcf
+
+done
+
+
+####################
+
+#output lumpy:
+
+cd /scratch1/tanxinli/tumoroutput/batch3sv/survivor.out/lumpy.passed.vcf
+###########################
+
+cp -r /project/desmith_128/recordstudy/batch3/bqsr.bam/batch3.id /scratch1/tanxinli/tumoroutput/batch3sv/manta.config/manta.out
+cd /scratch1/tanxinli/tumoroutput/batch3sv/manta.config/manta.out
+# filter each vcf for manta 
+
+for i in {1..6}
+do
+   echo "Welcome $i times"
+## input:
+input_vcf=(`ls *.somaticSV.vcf.gz | sed -n ${i}p`)
+base=$(basename ${input_vcf} .somaticSV.vcf.gz)
+output_vcf="$base.somaticSV.manta.vcf"
+input_name="${base}"
+input_file="batch3.id"
+
+# Use awk to find the matching name from the first column
+matching_name=$(awk -v input="$input_name" '$2 == input {print $1}' "$input_file")
+#check
+if [ -n "$matching_name" ]; then
+    echo "Matching name in the first column: $matching_name"
+else
+    echo "Name not found in the first column."
+fi
+bcftools view $input_vcf -s ^$matching_name -o somatic/$output_vcf
+done
+
+
+## sort using bcftools 
+for i in {1..6}
+do
+   echo "Welcome $i times"
+## input:
+cd /scratch1/tanxinli/tumoroutput/batch3sv/manta.config/manta.out/somatic
+input_vcf=(`ls *.somaticSV.manta.vcf | sed -n ${i}p`)
+base=$(basename ${input_vcf} .somaticSV.manta.vcf)
+output_vcf="$base.somaticSV.manta.sorted.vcf"
+
+bcftools sort $input_vcf > ../sorted/$output_vcf
+
+done
+
+#check vcf files:
+
+# bcftools view -no-header 869252_T.somaticSV.manta.sorted.vcf |head -n 10
+
+## only inlude PASSED variants for manta  
+
+# SV quality filtering
+cd /scratch1/tanxinli/tumoroutput/batch3sv/manta.config/manta.out/sorted
+for i in {1..6}
+do
+   echo "Welcome $i times"
+## input:
+input_vcf=(`ls *.somaticSV.manta.sorted.vcf | sed -n ${i}p`)
+base=$(basename ${input_vcf} .somaticSV.manta.sorted.vcf)
+output_vcf="$base.somaticSV.manta.sorted.passed.vcf"
+bcftools view $input_vcf   -i "FILTER == 'PASS'" -o /scratch1/tanxinli/tumoroutput/batch3sv/survivor.out/manta.passed.vcf/$output_vcf
+done
+
+#######################
+
+# filter each vcf for delly 
+cd /scratch1/tanxinli/tumoroutput/batch3sv/delly.out/delly.post.somatic/somatic.vcf
+for f in *.vcf.gz; do
+   bgzip -d "$f"
+done
+
+for i in {1..6}
+do
+   echo "Welcome $i times"
+## input:
+input_vcf=(`ls *.somatic.vcf | sed -n ${i}p`)
+base=$(basename ${input_vcf} .somatic.vcf)
+output_vcf="$base.somatic.vcf"
+input_name="${base}"
+bcftools view $input_vcf -s $input_name | bcftools view -i 'FMT/GT=="0/1"||FMT/GT=="1/1"' -o somatic/$output_vcf
+done
+
+
+
+## sort using bcftools 
+for i in {1..6}
+do
+   echo "Welcome $i times"
+## input:
+input_vcf=(`ls *.somatic.vcf | sed -n ${i}p`)
+base=$(basename ${input_vcf} .somatic.vcf)
+output_vcf="$base.somaticSV.delly.sorted.vcf"
+bcftools sort $input_vcf > sorted/$output_vcf
+done
+
+
+## only inlude PASSED variants for delly  
+# SV quality filtering
+#cd /scratch/kerenxu/wgs.smoking.out/survivor.out/delly.vcf/
+cd /scratch1/tanxinli/tumoroutput/batch3sv/delly.out/delly.post.somatic/somatic.vcf/somatic/sorted
+for i in {1..6}
+do
+   echo "Welcome $i times"
+## input
+input_vcf=(`ls *.somaticSV.delly.sorted.vcf | sed -n ${i}p`)
+base=$(basename ${input_vcf} .somaticSV.delly.sorted.vcf)
+output_vcf="$base.somaticSV.delly.sorted.passed.vcf"
+bcftools view $input_vcf -i "FILTER == 'PASS'" -o /scratch1/tanxinli/tumoroutput/batch3sv/survivor.out/delly.passed.vcf/$output_vcf
+done
+
+####################################################################################
+export PATH="/home1/tanxinli/SURVIVOR-master/Debug/:$PATH"
+
+# run SURVIVOR
+cd /scratch1/tanxinli/tumoroutput/batch3sv/survivor.out/manta.passed.vcf
+for i in {1..6}
+do
+   echo "Welcome $i times"
+
+## input:
+cd /scratch1/tanxinli/tumoroutput/batch3sv/survivor.out/manta.passed.vcf
+
+input_vcf=(`ls *.somaticSV.manta.sorted.passed.vcf | sed -n ${i}p`)
+sample_name=$(basename ${input_vcf} .somaticSV.manta.sorted.passed.vcf)
+
+cd ../
+# delly
+delly_vcf=./delly.passed.vcf/$sample_name.somaticSV.delly.sorted.passed.vcf 
+# manta
+manta_vcf=./manta.passed.vcf/$sample_name.somaticSV.manta.sorted.passed.vcf
+# lumpy
+lumpy_vcf=./lumpy.passed.vcf/$sample_name.somaticSV.smoove.sorted.vcf
+ls $delly_vcf $manta_vcf $lumpy_vcf > /scratch1/tanxinli/tumoroutput/batch3sv/survivor.out/two_caller/$sample_name.files
+
+SURVIVOR merge ./two_caller/$sample_name.files 100 2 0 0 0 0 /scratch1/tanxinli/tumoroutput/batch3sv/survivor.out/two_caller/$sample_name.merged.vcf
+perl -ne 'print "$1\n" if /SUPP_VEC=([^,;]+)/' /scratch1/tanxinli/tumoroutput/batch3sv/survivor.out/two_caller/$sample_name.merged.vcf |\
+ sed -e 's/\(.\)/\1 /g' > /scratch1/tanxinli/tumoroutput/batch3sv/survivor.out/two_caller/$sample_name.merged.overlapp.txt
+
+done
+
+
+#https://github.com/fritzsedlazeck/SURVIVOR/wiki/Methods-and-Parameter
+
+
+
+

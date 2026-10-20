@@ -1,0 +1,28 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=END
+#SBATCH --output=/scratch1/tanxinli/output/1.6FusionCatcher_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/1.6FusionCatcher_%A_%a.errcd
+#SBATCH --job-name=1.6FusionCatcher
+#SBATCH -c 20
+#SBATCH --ntasks=1
+#SBATCH --mem=64G
+#SBATCH --partition=main
+#SBATCH --account=desmith_488
+#SBATCH --array=1-21
+
+module purge
+module load gcc/11.3.0
+
+cd /project/desmith_128/recordstudy/rna_seq/F22FTSUSAT0580_HOMrdeiR
+ref_fusioncatcher=/project/desmith_488/tanxinli/fusioncatcher/data/human_v102
+fastq1=(`ls /project/desmith_128/recordstudy/rna_seq/F22FTSUSAT0580_HOMrdeiR/*T*/*_1.fq.gz  | sed -n ${SLURM_ARRAY_TASK_ID}p`)
+base=$(basename ${fastq1} _1.fq.gz)
+fastq2=(`echo $fastq1 | sed 's/_1.fq.gz/_2.fq.gz/g'`)
+sample=$base
+
+log="/scratch1/tanxinli/rnaseq_out/log/fusioncather/${base}.FusionCatcher.log"
+output="/scratch1/tanxinli/rnaseq_out/FusionCatcher/${base}.FusionCatcher"
+
+singularity exec --bind /project/desmith_488/tanxinli/,/scratch1/tanxinli/,/project/desmith_128/recordstudy/rna_seq/ /project/desmith_488/tanxinli/SINGULARITY_CACHEDIR/mdall/mdall/app_gulab_rnaseq-20231121.sif \
+fusioncatcher.py -p 8 -d $ref_fusioncatcher -i $fastq1,$fastq2 -o $output  &> ${log}

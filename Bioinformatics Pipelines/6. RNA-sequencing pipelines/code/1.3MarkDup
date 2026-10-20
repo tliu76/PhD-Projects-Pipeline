@@ -1,0 +1,37 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=ALL
+#SBATCH --output=/scratch1/tanxinli/output/markdup_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/markdup_%A_%a.errcd
+#SBATCH --job-name=markdup
+#SBATCH -c 20
+#SBATCH --ntasks=1
+#SBATCH --mem=65G
+#SBATCH --partition=main
+#SBATCH --account=desmith_488
+#SBATCH --array=1-21
+
+
+
+module purge
+module load gcc/11.3.0
+
+cd /scratch1/tanxinli/rnaseq_out/sorted.bam
+input_dir=/scratch1/tanxinli/rnaseq_out/sorted.bam
+output_dir=/scratch1/tanxinli/rnaseq_out/MarkDup.sorted.bam
+input_bam=(`ls /scratch1/tanxinli/rnaseq_out/sorted.bam/*sorted.aligned.bam  | sed -n ${SLURM_ARRAY_TASK_ID}p`)
+base=$(basename ${input_bam} .sorted.aligned.bam)
+output_bam="$base.MarkDup.sorted.aligned.bam"
+output_bai="$base.MarkDup.sorted.aligned.bai"
+output_metrics="$base.MarkDup.metrics.txt"
+log=/scratch1/tanxinli/rnaseq_out/log/$base.markDup.log
+
+singularity exec --bind /project/desmith_488/tanxinli/,/scratch1/tanxinli/,/project/desmith_128/recordstudy/rna_seq/ /project/desmith_488/tanxinli/SINGULARITY_CACHEDIR/mdall/mdall/app_gulab_rnaseq-20231121.sif \
+gatk MarkDuplicates -I ${input_bam} -O /${output_dir}/${output_bam} -M /${output_dir}/${output_metrics} --CREATE_MD5_FILE true  &> ${log}
+
+
+
+
+#cd $output_dir
+#singularity exec --bind /project/desmith_488/tanxinli/,/scratch1/tanxinli/,/project/desmith_128/recordstudy/rna_seq/ /project/desmith_488/tanxinli/SINGULARITY_CACHEDIR/mdall/mdall/app_gulab_rnaseq-20231121.sif \
+#samtools index ${output_bam} ${output_bai}

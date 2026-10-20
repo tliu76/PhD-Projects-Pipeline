@@ -1,0 +1,29 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=ALL
+#SBATCH --output=/scratch1/tanxinli/output/sortstar_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/sortstar_%A_%a.errcd
+#SBATCH --job-name=sortstar
+#SBATCH -c 20
+#SBATCH --ntasks=1
+#SBATCH --mem=60G
+#SBATCH --partition=main
+#SBATCH --account=desmith_488
+#SBATCH --array=1-21
+
+module purge
+module load gcc/11.3.0
+cd /scratch1/tanxinli/rnaseq_out/star
+input_dir=/scratch1/tanxinli/rnaseq_out/star
+input_bam=(`ls /scratch1/tanxinli/rnaseq_out/star/*bam  | sed -n ${SLURM_ARRAY_TASK_ID}p`)
+
+base=$(basename ${input_bam} Aligned.out.bam)
+output_bam="$base.sorted.aligned.bam"
+output_bai="$base.sorted.aligned.bai"
+output_dir=/scratch1/tanxinli/rnaseq_out/sorted.bam
+
+singularity exec --bind /project/desmith_488/tanxinli/,/scratch1/tanxinli/,/project/desmith_128/recordstudy/rna_seq/ /project/desmith_488/tanxinli/SINGULARITY_CACHEDIR/mdall/mdall/app_gulab_rnaseq-20231121.sif \
+samtools sort -m 1G -@ 10 -O bam -T ${input_dir} -o $output_dir/$output_bam $input_bam
+
+singularity exec --bind /project/desmith_488/tanxinli/,/scratch1/tanxinli/,/project/desmith_128/recordstudy/rna_seq/ /project/desmith_488/tanxinli/SINGULARITY_CACHEDIR/mdall/mdall/app_gulab_rnaseq-20231121.sif \
+samtools index ${output_dir}/${output_bam} ${output_dir}/${output_bai} 

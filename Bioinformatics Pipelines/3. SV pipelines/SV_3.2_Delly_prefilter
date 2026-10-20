@@ -1,0 +1,36 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=END
+#SBATCH --output=/scratch1/tanxinli/output/3.2dellyprefilter_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/3.2dellyprefilter_%A_%a.errcd
+#SBATCH --job-name=3.2dellycallprefilter
+#SBATCH -c 20
+#SBATCH --ntasks=1
+#SBATCH --mem=10G
+#SBATCH --partition=main
+#SBATCH --array=1-6
+
+
+module purge
+eval "$(conda shell.bash hook)"
+conda activate  /home1/tanxinli/miniconda3/envs/delly
+cd /scratch1/tanxinli/tumoroutput/batch3sv/delly.out
+ref=/project/desmith_488/kerenxu/refs/GATK_resource_bundle/resources_broad_hg38_v0_Homo_sapiens_assembly38.fasta
+exclude_bed=/project/desmith_488/kerenxu/refs/SV_resource/human.hg38.excl.tsv
+threads=20
+
+## input:
+# ls *bcf > list.id
+input_bcf=(`cat list.id | sed -n ${SLURM_ARRAY_TASK_ID}p`)
+base=$(basename ${input_bcf} .bcf)
+#sample_list=/scratch1/tanxinli/tumoroutput/batch3sv/delly.out/sample.tsv
+input_name="${base}"
+input_file="batch3.id"
+# Use awk to find the matching name from the second column
+matching_name=$(awk -v input="$input_name" '$1 == input {print $2}' "$input_file")
+
+## output:
+output_bcf=/scratch1/tanxinli/tumoroutput/batch3sv/delly.out/delly.pre/${matching_name}.pre.bcf
+
+#delly_v0.8.7_linux_x86_64bit filter -f somatic -o $output_bcf -s $sample_list $input_bcf
+delly filter -f somatic -o $output_bcf -s sample.tsv  $input_bcf

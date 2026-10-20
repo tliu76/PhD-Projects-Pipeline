@@ -1,0 +1,29 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=ALL
+#SBATCH --output=/scratch1/tanxinli/output/SplitNCigar_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/SplitNCigar_%A_%a.errcd
+#SBATCH --job-name=SplitNCigar
+#SBATCH -c 20
+#SBATCH --ntasks=1
+#SBATCH --mem=240G
+#SBATCH --partition=epyc-64
+#SBATCH --account=desmith_128
+#SBATCH --array=2-21
+
+
+module purge
+module load gcc/11.3.0
+
+cd /project/desmith_488/tanxinli/
+sample=(`cat /project/desmith_128/recordstudy/rna_seq/F22FTSUSAT0580_HOMrdeiR/sample | sed -n ${SLURM_ARRAY_TASK_ID}p`) 
+PWD=/project/desmith_488/tanxinli/SINGULARITY_CACHEDIR/mdall/mdall
+singularity exec --bind $PWD,/project/desmith_488/tanxinli/,/scratch1/tanxinli/,/project/desmith_128/recordstudy/rna_seq/ /project/desmith_488/tanxinli/SINGULARITY_CACHEDIR/mdall/mdall/app_gulab_rnaseq-20231121.sif \
+snakemake \
+--config dir_in="/scratch1/tanxinli/rnaseq_out/MarkDup.sorted.bam" \
+         dir_out="/scratch1/tanxinli/rnaseq_out" \
+         sample=$sample \
+         -s /scratch1/tanxinli/rnaseq/RNAseq/haplotypecaller.smk --rerun-incomplete -p --keep-going -j21 
+
+
+# -s /scratch1/tanxinli/rnaseq/RNAseq/haplotypecaller.smk

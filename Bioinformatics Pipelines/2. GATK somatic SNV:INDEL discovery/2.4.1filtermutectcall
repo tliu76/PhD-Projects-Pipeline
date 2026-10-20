@@ -1,0 +1,54 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=END
+#SBATCH --output=/scratch1/tanxinli/output/2.4.1FilterMutectCalls_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/2.4.1FilterMutectCalls_%A_%a.errcd
+#SBATCH --job-name=2.4.1FilterMutectCalls
+#SBATCH -c 20
+#SBATCH --ntasks=1
+#SBATCH --mem=60G
+#SBATCH --partition=main
+#SBATCH --array=6
+#SBATCH --account=desmith_488
+
+module load gcc/11.3.0
+module load openjdk
+module load gatk/4.2.6.1
+ref=/project/desmith_488/kerenxu/refs/GATK_resource_bundle/resources_broad_hg38_v0_Homo_sapiens_assembly38.fasta
+
+## input:
+mutect2_dir=/scratch1/tanxinli/tumoroutput/batch3/mutect2_out/gather  
+contam_dir=/scratch1/tanxinli/tumoroutput/batch3/contamination
+cd /scratch1/tanxinli/tumoroutput/batch3/mutect2_out/gather
+unfiltered_vcf=(`ls *.vcf.gz | sed -n ${SLURM_ARRAY_TASK_ID}p`)
+
+sample_name=$(basename ${unfiltered_vcf} .vcf.gz)
+prefix="sample"
+base=${sample_name#"$prefix"}
+
+contamination_table="${contam_dir}/$base.contamination.table"
+maf_segments="${contam_dir}/$base.segments.table"
+artifact_priors_tar_gz="${mutect2_dir}/$sample_name.artifact-priors.tar.gz"
+mutect_stats="${mutect2_dir}/$sample_name.vcf.gz.stats"
+
+
+## output: 
+out_dir_bam=/project/desmith_128/recordstudy/batch3/FilterMutectCalls_out
+output_vcf="${out_dir_bam}/${base}.filtering.vcf.gz"
+filtering_stats="${out_dir_bam}/$base.filtering.vcf.gz.stats"
+
+## run gatk:
+gatk --java-options "-Xms20G -Djava.io.tmpdir=/scratch1/tanxinli/tmp/filtermutectcall" \
+        FilterMutectCalls \
+            -V /scratch1/tanxinli/tumoroutput/batch3/mutect2_out/gather/$unfiltered_vcf \
+            -R $ref \
+            -O  $output_vcf \
+            --contamination-table $contamination_table \
+            --tumor-segmentation  $maf_segments \
+            --ob-priors $artifact_priors_tar_gz \
+            -stats $mutect_stats \
+            --filtering-stats $filtering_stats \
+           --min-reads-per-strand 3 \
+            --tmp-dir /scratch1/tanxinli/tmp/filtermutectcall
+
+

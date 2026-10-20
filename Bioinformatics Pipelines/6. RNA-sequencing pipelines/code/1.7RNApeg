@@ -1,0 +1,30 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=ALL
+#SBATCH --output=/scratch1/tanxinli/output/1.7RNApeg_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/1.7RNApeg_%A_%a.errcd
+#SBATCH --job-name=1.7RNApeg
+#SBATCH -c 20
+#SBATCH --ntasks=1
+#SBATCH --mem=65G
+#SBATCH --partition=main
+#SBATCH --account=desmith_488
+#SBATCH --array=1-21
+
+module purge
+module load gcc/11.3.0
+
+ref_RNApeg_fa="/project/desmith_488/tanxinli/refs/rnaseq/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.fna"
+ref_RNApeg_flat="/project/desmith_488/tanxinli/SINGULARITY_CACHEDIR/mdall/mdall/refFlat.txt"
+
+cd /scratch1/tanxinli/rnaseq_out/MarkDup.sorted.bam/
+input_bam=(`ls /scratch1/tanxinli/rnaseq_out/MarkDup.sorted.bam/*sorted.aligned.bam  | sed -n ${SLURM_ARRAY_TASK_ID}p`)
+base=$(basename ${input_bam} .MarkDup.sorted.aligned.bam)
+
+dir_out="/scratch1/tanxinli/rnaseq_out/RNApeg"
+junctions="/scratch1/tanxinli/rnaseq_out/RNApeg/{base}.bam.junctions.tab.shifted.tab"
+
+log="/scratch1/tanxinli/rnaseq_out/log/RNApeg.log/${base}.RNAPeg"
+
+singularity exec --bind /project/desmith_488/tanxinli/,/scratch1/tanxinli/,/project/desmith_128/recordstudy/rna_seq/ /project/desmith_488/tanxinli/SINGULARITY_CACHEDIR/mdall/mdall/app_gulab_rnaseq-20231121.sif \
+RNApeg.sh -b $input_bam -f $ref_RNApeg_fa -r $ref_RNApeg_flat -O $dir_out  &> $log

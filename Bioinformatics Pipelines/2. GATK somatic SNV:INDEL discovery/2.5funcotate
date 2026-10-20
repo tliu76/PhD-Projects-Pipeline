@@ -1,0 +1,45 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=END
+#SBATCH --output=/scratch1/tanxinli/output/2.5Funcotate_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/2.5Funcotate_%A_%a.errcd
+#SBATCH --job-name=2.5Funcotate
+#SBATCH -c 15
+#SBATCH --ntasks=1
+#SBATCH --mem=59G
+#SBATCH --partition=main
+#SBATCH --array=1-6
+#SBATCH --account=desmith_488
+
+module purge
+module load gcc/11.3.0 openblas/0.3.20
+module load openjdk
+module load gatk/4.2.6.1
+
+cd /project/desmith_128/recordstudy/batch3/FilterMutectCalls_out
+ref=/project/desmith_488/kerenxu/refs/GATK_resource_bundle/resources_broad_hg38_v0_Homo_sapiens_assembly38.fasta
+#DATA_SOURCES_FOLDER=/project/desmith_488/tanxinli/refs/Funcotator_resouorce/funcotator_dataSources.v1.8.hg38.20230908s
+DATA_SOURCES_FOLDER=/project/desmith_488/kerenxu/refs/Funcotator_resouorce/funcotator_dataSources.v1.7.20200521s
+reference_version="hg38"
+
+## input
+input_vcf=($(ls *.filtering.vcf.gz | sed -n ${SLURM_ARRAY_TASK_ID}p))
+base=$(basename ${input_vcf} .filtering.vcf.gz)
+prefix="sample"
+sample_name=${base#"$prefix"}
+output_format="VCF"
+
+## output
+output_vcf="$base.funcotated.vcf.gz"
+
+# Run Funcotator:
+srun gatk --java-options "-Xms55G -Djava.io.tmpdir=/scratch1/tanxinli/tmp/funcotator" \
+    Funcotator \
+    --data-sources-path $DATA_SOURCES_FOLDER \
+    --ref-version $reference_version \
+    --output-file-format $output_format \
+    -R $ref \
+    -V /project/desmith_128/recordstudy/batch3/FilterMutectCalls_out/$input_vcf \
+    -O /project/desmith_128/recordstudy/batch3/Funcotator_out/$output_vcf \
+    --tmp-dir /scratch1/tanxinli/tmp/funcotator
+

@@ -1,0 +1,15 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=ALL
+#SBATCH --output=/scratch1/tanxinli/output/fastqc_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/fastqc_%A_%a.errcd
+#SBATCH --job-name=fastqc
+#SBATCH -c 15
+#SBATCH --nodes 1
+#SBATCH --ntasks 1
+#SBATCH --mem=59G
+#SBATCH --partition main
+#SBATCH --account=desmith_488
+#SBATCH --array=1-21
+
+

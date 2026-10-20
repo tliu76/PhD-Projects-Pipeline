@@ -1,0 +1,42 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=END
+#SBATCH --output=/scratch1/tanxinli/output/2.4.2FilterAlignmentArtifacts_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/2.4.2FilterAlignmentArtifacts_%A_%a.errcd
+#SBATCH --job-name=2.4.2FilterAlignmentArtifacts
+#SBATCH -c 15
+#SBATCH --ntasks=1
+#SBATCH --mem=65G
+#SBATCH --partition=epyc-64
+#SBATCH --array=1-7
+#SBATCH --account=desmith_488
+
+module load gcc/11.3.0
+module load openjdk
+module load gatk/4.2.6.1
+
+cd /scratch2/tanxinli/tumoroutput/FilterMutectCalls_out
+ref=/project/desmith_488/tanxinli/refs/GATK_resource_bundle/Homo_sapiens_assembly38.fasta
+realignment_index_bundle=/project/desmith_488/kerenxu/refs/GATK_resource_bundle/resources_broad_hg38_v0_Homo_sapiens_assembly38.fasta.img
+
+## input
+input_vcf=($(ls *.filtering.vcf.gz | sed -n ${SLURM_ARRAY_TASK_ID}p))
+base=$(basename ${input_vcf} .filtering.vcf.gz)
+prefix="sample"
+sample_name=${base#"$prefix"}
+tumor_reads="${sample_name}_T.aligned.duplicates_marked.recalibrated.bam"
+
+## output
+output_vcf="$base.FilterAlignmentArtifacts.filtered.vcf.gz"
+
+cd /scratch2/tanxinli/tumoroutput/FilterAlignmentArtifacts_out
+
+srun gatk --java-options "-Xms45G -Djava.io.tmpdir=/scratch1/tanxinli/tmp/FilterAlignmentArtifacts" \
+    FilterAlignmentArtifacts \
+    -R $ref \
+    -V /scratch2/tanxinli/tumoroutput/FilterMutectCalls_out/$input_vcf \
+    -I /scratch2/tanxinli/tumoroutput/bqsr.bam/$tumor_reads \
+    --bwa-mem-index-image $realignment_index_bundle \
+    -O /scratch2/tanxinli/tumoroutput/FilterAlignmentArtifacts_out/$output_vcf \
+    --tmp-dir /scratch1/tanxinli/tmp/FilterAlignmentArtifacts
+

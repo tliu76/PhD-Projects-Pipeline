@@ -1,0 +1,28 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=ALL
+#SBATCH --output=/scratch1/tanxinli/output/0fastqc_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/0fastqc_%A_%a.errcd
+#SBATCH --job-name=fastqc0831
+#SBATCH -c 15
+#SBATCH --nodes 1
+#SBATCH --ntasks 1
+#SBATCH --mem=30G
+#SBATCH --partition=main
+#SBATCH --array=1-15
+
+# run fastqc
+cd /project/desmith_128/recordstudy/
+paths=$(awk '{print $1; print $2}' batch3list)
+fastq1=(`find $paths  -name "*_1.fq.gz" | sed -n ${SLURM_ARRAY_TASK_ID}p`)
+
+DIR=$(dirname ${fastq1})
+BASE=$(basename ${fastq1} _1.fq.gz)
+fastq2="${DIR}/${BASE}_2.fq.gz"
+
+module load gcc/11.3.0
+module load fastqc/0.11.9
+fastqc --noextract $fastq1 $fastq2 --outdir /project/desmith_128/recordstudy/batch3/fastqc.out -t 15
+
+
+ 

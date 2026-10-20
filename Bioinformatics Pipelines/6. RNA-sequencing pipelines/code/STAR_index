@@ -1,0 +1,25 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=ALL
+#SBATCH --output=/scratch1/tanxinli/output/starindex_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/starindex_%A_%a.errcd
+#SBATCH --job-name=starindex
+#SBATCH -c 20
+#SBATCH --ntasks=1
+#SBATCH --mem=60G
+#SBATCH --partition=main
+#SBATCH --account=desmith_488
+
+module purge
+module load gcc/11.3.0
+cd /project/desmith_488/tanxinli/
+
+PWD=/project/desmith_488/tanxinli/SINGULARITY_CACHEDIR/mdall/mdall
+singularity exec --bind $PWD,/project/desmith_488/tanxinli/,/scratch1/tanxinli/ /project/desmith_488/tanxinli/SINGULARITY_CACHEDIR/mdall/mdall/app_gulab_rnaseq-20231121.sif \
+STAR --runMode genomeGenerate  \
+     --genomeDir /project/desmith_488/tanxinli/refs/rnaseq/index_star  \
+     --genomeFastaFiles /project/desmith_488/tanxinli/refs/rnaseq/GCA_000001405.15_GRCh38_no_alt_plus_hs38d1_analysis_set.fna \
+     --sjdbGTFfile /project/desmith_488/tanxinli/SINGULARITY_CACHEDIR/mdall/mdall/Homo_sapiens.GRCh38.V102.withChr.gtf \
+     --runThreadN 15
+
+#/project/desmith_488/tanxinli/refs/rnaseq/GCA_000001405.15_GRCh38_full_analysis_set.refseq_annotation.gtf

@@ -1,0 +1,43 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=END
+#SBATCH --output=/scratch1/tanxinli/output/1.2Tbwa_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/1.2Tbwa_%A_%a.errcd
+#SBATCH --job-name=1.2Tbwa
+#SBATCH -c 20
+#SBATCH --ntasks=1
+#SBATCH --mem=80G
+#SBATCH --partition=epyc-64
+#SBATCH --array=1-15
+#SBATCH --account=desmith_488
+
+ref=/project/desmith_488/kerenxu/refs/GATK_resource_bundle/resources_broad_hg38_v0_Homo_sapiens_assembly38.fasta 
+module load gcc/11.3.0 
+module load openjdk
+module load gatk/4.2.6.1
+module load bwa/0.7.17
+module load samtools
+
+
+cd /project/desmith_128/recordstudy/
+paths=$(awk '{print $1; print $2}' batch3list)
+fastq1=(`find $paths  -name "*_1.fq.gz" | sed -n ${SLURM_ARRAY_TASK_ID}p`)
+dir=$(dirname ${fastq1})
+base=$(basename ${fastq1} _1.fq.gz)
+fastq2=(`echo $fastq1 | sed 's/_1.fq.gz/_2.fq.gz/g'`)
+sample_name=$(basename ${dir})
+
+library_name=(`echo $base | cut -d '_' -f3`)
+flowcell=(`echo $base | cut -d '_' -f1`)
+lane1=(`echo $base | cut -d '_' -f2`)
+lane=${lane1: -1}
+
+readgroup_name="$sample_name"."$flowcell"."$lane"
+
+output_aligned_bam="$sample_name"_"$base.aligned.bam"
+
+cd $path
+bwa mem -M -Y -t 20 -R  "@RG\tID:${readgroup_name}\tSM:${sample_name}\tPL:Illumina \tLB:${library_name}"  $ref   $fastq1 $fastq2 | samtools view -S -b \
+   >  /scratch1/tanxinli/tumoroutput/batch3/aligned.bam/$output_aligned_bam
+
+

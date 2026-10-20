@@ -1,0 +1,32 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=END
+#SBATCH --output=/scratch1/tanxinli/output/AnnotSV_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/AnnotSV_%A_%a.errcd
+#SBATCH --job-name=AnnotSV
+#SBATCH -c 15
+#SBATCH --ntasks=1
+#SBATCH --mem=59G
+#SBATCH --partition=epyc-64
+#SBATCH --account=desmith_128
+
+module load gcc/11.3.0  openblas/0.3.20
+module load bcftools/1.14
+module load  bedtools2/2.30.0
+
+export ANNOTSV=/project/desmith_488/tanxinli/tools/AnnotSV
+cd /scratch1/tanxinli/tumoroutput/batch2sv/survivor.out/two_caller
+
+for i in {1..5}
+do
+   echo "Welcome $i times"
+## input:
+input_vcf=(`ls *.merged.vcf | sed -n ${i}p`)
+
+$ANNOTSV/bin/AnnotSV -SVinputFile /scratch1/tanxinli/tumoroutput/batch2sv/survivor.out/two_caller/$input_vcf \
+  -genomeBuild GRCh38 \
+  -outputDir /scratch1/tanxinli/tumoroutput/batch2sv/survivor.out/AnnotSV_out_two_caller \
+  -SVminSize 10 \
+  -hpo "HP:0006721"
+#hpo: Human Phenotype Ontology: acute lymphoblastic leukemia
+done
