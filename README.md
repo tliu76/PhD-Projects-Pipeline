@@ -1,1 +1,22 @@
 # PhD-Projects-Pipeline
+
+Some workflows I wrote for my PhD research projects
+
+### Bioinformatics Pipelines
+1. Data pre-processing for variant discovery GATK4
+2. GATK somatic SNV/Indels discovery
+3. SV pipelines
+4. CNV pipelines
+5. Mutational signatures
+6. RNA-sequencing pipelines
+7. Long-read oxford nanopore sequencing 
+
+
+### Association studies
+1. Genome-wide association study (PLINK)
+2. Multi-ancestry Genome-wide association study (linear mixed model)(GENESIS)
+3. Multi-level modeling 
+4. Survival modeling
+
+
+
