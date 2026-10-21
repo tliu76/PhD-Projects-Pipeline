@@ -1,4 +1,5 @@
-/project2/desmith_128/datasets/For_Tanxin/MIGI_1_2_MXB_Post_QC
+# Path to the MIGI_1_2_MXB_Post_QC dataset
+# /project2/desmith_128/datasets/For_Tanxin/MIGI_1_2_MXB_Post_QC
 .libPaths("/home1/tanxinli/R_lib")
 suppressMessages({
   library(ggplot2); library(dplyr); library(data.table); library(ggrepel)

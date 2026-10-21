@@ -3,17 +3,8 @@
 ##
 ## No variant filter beyond valid P and CHR 1-22 (each study is plotted as it
 ## enters METAL). lambda_1000 rescales lambda to 1000 cases / 1000 controls.
-##
-## Gene labels: GWS variants (P < 5e-8) are grouped into loci with the same rule
-## as step 5 (new locus on a new chromosome or a gap > 500 kb); each locus is
-## labelled with the first ANNOVAR refGene gene of its lead variant, else rsID,
-## else variant ID. Annotation is looked up by variant ID in step 5's
-## meta_fixed_sumstats_annotated.txt (every study variant is in the meta file).
-## Loci are written to study_plots/loci_<STUDY>.tsv.
-##
-## Run: Rscript 07_study_manhattan_qq.R <out_dir> [study_index 1-7]
-##      without an index all 7 studies are run one after another;
-##      07_run_study_manhattan_qq.sh runs them as a SLURM array (one per task).
+
+
 .libPaths("/home1/tanxinli/R_lib")
 suppressMessages({
   library(ggplot2); library(dplyr); library(data.table); library(ggrepel)

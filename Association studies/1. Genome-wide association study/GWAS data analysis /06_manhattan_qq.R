@@ -2,12 +2,8 @@
 ## Adapted from ../../meta-analysis1020/manhattan/regen_manhattan_meta_fixed.R:
 ## one label per genome-wide-significant locus, taken from
 ## meta_fixed_significant_loci.tsv (gene, else rsID, else variant ID).
-##
-## Uses the same variant filter as step 5 (N_STUDIES >= MIN_STUDIES), so the
-## orange significant points and the locus labels always match.
-##
-## Run: in RStudio (uses the default OUTDIR below), or
-##      Rscript 06_manhattan_qq.R <out_dir>
+
+
 .libPaths("/home1/tanxinli/R_lib")
 suppressMessages({
   library(ggplot2); library(dplyr); library(data.table); library(ggrepel)
