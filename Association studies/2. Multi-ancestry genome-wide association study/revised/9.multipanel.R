@@ -90,4 +90,3 @@ create_multipanel(
   file.path(outdir, "Figure_QQ_6phenotypes.png")
 )
 
-cat(">>> Multi-panel figures saved to:", outdir, "\n")

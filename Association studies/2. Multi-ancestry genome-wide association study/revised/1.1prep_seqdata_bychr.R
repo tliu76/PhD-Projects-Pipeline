@@ -69,4 +69,3 @@ if (file.exists(chr_out)) file.remove(chr_out)
 message("Exporting -> ", chr_out)
 seqExport(gds, chr_out)
 
-message("========== DONE: chr ", chr, " ==========")

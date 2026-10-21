@@ -42,17 +42,13 @@ PHENOS=(
 
 
 
-
-# 准备文件列表
 LIST_QQ=""
 LIST_MAN=""
 
 for TRAIT in "${PHENOS[@]}"; do
-    # 定位之前的图片路径
     IMG_QQ="${BASE_DIR}/${TRAIT}/plots/qqplot_${TRAIT}.png"
     IMG_MAN="${BASE_DIR}/${TRAIT}/plots/manhattan_${TRAIT}.png"
 
-    # 检查文件是否存在
     if [[ -f "$IMG_QQ" ]]; then
         LIST_QQ="$LIST_QQ $IMG_QQ"
     else
@@ -70,5 +66,3 @@ convert $LIST_QQ -quality 100 "${OUTPUT_PDF_DIR}/Summary_QQ_Plots.pdf"
 
 convert $LIST_MAN -quality 100 "${OUTPUT_PDF_DIR}/Summary_Manhattan_Plots.pdf"
 
-
-# ============================================

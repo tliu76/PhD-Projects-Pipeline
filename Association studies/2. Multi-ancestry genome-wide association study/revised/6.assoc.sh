@@ -49,17 +49,9 @@ PHENOS=(  "n.all_INT"                    "n.nonig_INT"                  "n.ig_IN
 R_SCRIPT="/project2/desmith_128/tanxin/scratch1_new/mp2prt_gwas/filtered/code/genesis/0323_SV/revised/6.single_assoc.R" 
 
 
-# 循环遍历每一个 phenotype
 for pheno in "${PHENOS[@]}"; do
     
-    echo "------------------------------------------------------"
-    echo "Running GWAS for phenotype: ${pheno} on Chr ${CHR}..."
-    echo "------------------------------------------------------"
-    
-    # 运行 R 脚本，传入 染色体号 和 phenotype名
     Rscript ${R_SCRIPT} ${CHR} ${pheno}
-    
-    # 检查上一步是否成功
     if [ $? -eq 0 ]; then
         echo "Successfully finished ${pheno} on Chr ${CHR}"
     else

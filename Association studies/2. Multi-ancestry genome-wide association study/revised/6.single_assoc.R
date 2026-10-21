@@ -82,5 +82,5 @@ message("Saved results to: ", out_file)
 
 ## 关掉 GDS
 seqClose(seqData)
-message("=== Done chr ", chr, " ===")
+
 

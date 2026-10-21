@@ -3,7 +3,6 @@
 
 # ===============================================================
 # 4.run_pcrelate_full.R
-# One-shot PC-Relate on merged GDS (no per-chromosome split)
 # Inputs:
 #   - MP2PRT.filtered.merged.gds
 #   - ldpruned_allchr.RDS

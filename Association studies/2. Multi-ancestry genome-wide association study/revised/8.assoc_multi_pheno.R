@@ -153,6 +153,3 @@ manhattan(
 )
 
 dev.off()
-cat("Saved Manhattan plot:", man_file, "\n")
-
-cat(">>> Finished phenotype:", trait, "\n")

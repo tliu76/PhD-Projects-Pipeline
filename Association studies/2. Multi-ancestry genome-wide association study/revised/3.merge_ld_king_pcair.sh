@@ -15,4 +15,5 @@ cd /project2/desmith_128/tanxin/scratch1_new/mp2prt_gwas/filtered/code/genesis/0
 module load  ver/2506  gcc/14.3.0
 module load r/4.5.0    
 
+
 Rscript /project2/desmith_128/tanxin/scratch1_new/mp2prt_gwas/filtered/code/genesis/0323_SV/revised/3.merge_ld_king_pcair.R

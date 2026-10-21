@@ -53,9 +53,5 @@ PHENOS=(  "n.all_INT"                    "n.nonig_INT"                  "n.ig_IN
 IDX=${SLURM_ARRAY_TASK_ID}
 TRAIT=${PHENOS[$IDX-1]}
 
-echo "------------------------------------------"
-echo "Job Array ID: $IDX"
-echo "Processing Phenotype: ${TRAIT}"
-echo "------------------------------------------"
 
 Rscript /project2/desmith_128/tanxin/scratch1_new/mp2prt_gwas/filtered/code/genesis/0323_SV/revised/8.assoc_multi.R "${TRAIT}"

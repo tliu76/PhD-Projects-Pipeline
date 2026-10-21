@@ -14,7 +14,6 @@
 #   - pcrelate_kinship_mat.RDS
 # ===============================================================
 
-
 .libPaths(c("/home1/tanxinli/R_lib", .libPaths()))
 suppressPackageStartupMessages({
   library(SeqArray)

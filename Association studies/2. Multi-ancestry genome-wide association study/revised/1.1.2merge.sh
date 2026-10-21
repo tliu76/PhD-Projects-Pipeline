@@ -22,7 +22,6 @@ Rscript - << 'EOF'
 # Set custom library path
 .libPaths("/home1/tanxinli/R_lib")
 
-
 suppressPackageStartupMessages({
   library(GENESIS)
   library(GWASTools)

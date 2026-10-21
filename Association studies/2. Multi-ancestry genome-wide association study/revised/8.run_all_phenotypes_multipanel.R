@@ -247,14 +247,14 @@ manhattan(
   chr = "chr",
   bp  = "pos",
   p   = "Score.pval",
-  snp = "gene",            # <<< 关键：用 gene 作为标注
+  snp = "gene",           
   col = c("#4C72B0", "#E15759"),
   suggestiveline = suggestive_line,
   genomewideline = genomewide_line,
-  annotatePval = 5e-8,     # 只标 genome-wide 显著位点
+  annotatePval = 5e-8,     
   annotateTop  = FALSE,
-  ylim = c(0, 10),         # 固定 y 轴（方便 multipanel）
-  main = plot_label,       # human-readable label
+  ylim = c(0, 10),         
+  main = plot_label,       
   cex = 0.8
 )
 

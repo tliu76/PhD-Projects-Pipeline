@@ -2,12 +2,12 @@
 #SBATCH --job-name=test
 #SBATCH --output=/project2/desmith_128/tanxin/scratch1_new/mp2prt_gwas/filtered/code/genesis/0323_SV/revised/log/pcrel_%j.out
 #SBATCH --error=/scratch1/tanxinli/error/pcrel_%j.err
-#SBATCH --time=48:00:00             # 24h is realistic for PC-Relate
+#SBATCH --time=48:00:00             
 #SBATCH --nodes=1
 #SBATCH -c 20
 #SBATCH --ntasks=1        
-#SBATCH --mem=30G                   # very safe; GENESIS benefits from RAM
-#SBATCH --partition=epyc-64      # AMD nodes faster for vector ops
+#SBATCH --mem=30G                 
+#SBATCH --partition=epyc-64      
 #SBATCH --account=desmith_128
 
 # Load R (modify version as needed on your HPC)

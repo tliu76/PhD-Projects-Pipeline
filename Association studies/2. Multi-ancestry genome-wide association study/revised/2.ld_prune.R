@@ -21,7 +21,6 @@ if (length(args) < 3) {
 }
 
 
-
 gds_dir  <- args[1]   # directory containing MP2PRT.filtered.chr*.gds
 out_dir  <- args[2]   # directory to save ldpruned_chr*.RDS
 chr      <- as.integer(args[3])

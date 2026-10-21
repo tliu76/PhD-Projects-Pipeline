@@ -43,14 +43,11 @@ PHENOS=(
     
 )
 
-# -------- pick phenotype by SLURM array index --------
+
 PHENO="${PHENOS[$((SLURM_ARRAY_TASK_ID - 1))]}"
 
-echo ">>> SLURM task ${SLURM_ARRAY_TASK_ID}: ${PHENO}"
-
-# -------- run R script for ONE phenotype --------
 Rscript "${RSCRIPT}" "${PHENO}"
 
-echo ">>> Finished ${PHENO}"
+
 
 

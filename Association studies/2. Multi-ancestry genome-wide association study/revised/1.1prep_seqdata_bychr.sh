@@ -29,4 +29,5 @@ echo "=== Running chr ${CHR} ==="
 
 Rscript /project2/desmith_128/tanxin/scratch1_new/mp2prt_gwas/filtered/code/genesis/0323_SV/revised/1.1prep_seqdata_bychr.R   ${COVAR}   ${GDS}   ${OUTDIR}  ${CHR}
 
+
 echo "=== Done chr ${CHR} ==="
