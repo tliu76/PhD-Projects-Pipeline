@@ -19,7 +19,7 @@ chr   <- as.integer(args[1])
 pheno <- args[2]  # 读取第二个参数作为 phenotype 名字
 message("=== Start assoc for Chromosome: ", chr, " | Phenotype: ", pheno, " ===")
 
-# --- 2. 动态设置路径 (根据你的目录结构) ---
+# --- 2. 动态设置路径 ---
 # 基础目录 (所有结果的父目录)
 base_dir <- "/project2/desmith_128/tanxin/scratch1_new/mp2prt_gwas/filtered/code/genesis/0323_SV/result/null_model"
 
@@ -62,7 +62,7 @@ seqSetFilter(seqData, variant.sel = sel, verbose = TRUE)
 iterator <- SeqVarBlockIterator(seqData, verbose = TRUE)
 
 
-## 跑 single-variant test 这里的 nullmod 已经包含了对应的 phenotype 信息
+## 跑 single-variant test 这里的 nullmod 已经包含了对应的 phenotype 
 assoc_chr <- assocTestSingle(iterator, nullmod, verbose=FALSE,
                          BPPARAM=BiocParallel::SerialParam())
 
