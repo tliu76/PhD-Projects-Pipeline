@@ -117,6 +117,10 @@ covar <- covar[order(match(sample, sample_ids))]
 
 
 
+
+
+
+
 # ==============================================================================
 # STEP 4: Calculate Principal Components (for population structure)
 # ==============================================================================
