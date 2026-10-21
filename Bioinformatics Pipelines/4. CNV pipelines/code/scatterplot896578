@@ -1,0 +1,40 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=END
+#SBATCH --output=/scratch1/tanxinli/output/CNVkit_plot_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/CNVkit_plot_%A_%a.errcd
+#SBATCH --job-name=CNVkit_plot
+#SBATCH -c 15
+#SBATCH --ntasks=1
+#SBATCH --mem=59G
+#SBATCH --partition=main
+#SBATCH --array=1
+
+# load R
+module load gcc/8.3.0 openblas/0.3.8 r/4.0.0
+module load bcftools
+srun hostname
+
+export PATH="/project/desmith_488/tanxinli/SINGULARITY_CACHEDIR/:$PATH"
+
+#cd /project/desmith_128/tanxin/scratch2/tumoroutput/batch2/cnvkit.out.anno
+cd /project/desmith_128/tanxin/scratch2/tumoroutput/batch2/cnvkit.out_batch2
+
+
+gene_info=/project/desmith_488/kerenxu/refs/GATK_resource_bundle/somatic_cnv/refFlat.txt
+
+
+singularity exec --bind /project/desmith_488,/project/desmith_128  /project/desmith_488/kerenxu/SINGULARITY_CACHEDIR/cnvkit_latest.sif cnvkit.py scatter  -s 896578_T.aligned.duplicates_marked.recalibrated.cn{s,r} \
+-v /project/desmith_128/tanxin/scratch2/tumoroutput/batch2/mutect2_out/gather/sample896578_T.vcf.gz -i 896578_T -n L0012_01RC_G --y-min=-2.5 --y-max=2.5  --output ../cnv_graph/896578_T.baf.scatter.pdf
+
+singularity exec --bind /project/desmith_488,/project/desmith_128  /project/desmith_488/kerenxu/SINGULARITY_CACHEDIR/cnvkit_latest.sif cnvkit.py scatter  -s 908423_T.aligned.duplicates_marked.recalibrated.cn{s,r} \
+-v /project/desmith_128/tanxin/scratch2/tumoroutput/batch2/mutect2_out/gather/sample908423_T.vcf.gz -i 908423_T -n L0010_01RC_G --y-min=-2.5 --y-max=2.5  --output ../cnv_graph/908423_T.baf.scatter.pdf
+
+singularity exec --bind /project/desmith_488,/project/desmith_128  /project/desmith_488/kerenxu/SINGULARITY_CACHEDIR/cnvkit_latest.sif cnvkit.py scatter  -s 808693_T.aligned.duplicates_marked.recalibrated.cn{s,r} \
+-v /project/desmith_128/tanxin/scratch2/tumoroutput/batch2/mutect2_out/gather/sample808693_T.vcf.gz -i 808693_T -n L0013_01RC_G --y-min=-2.5 --y-max=2.5  --output ../cnv_graph/808693_T.baf.scatter.pdf
+
+singularity exec --bind /project/desmith_488,/project/desmith_128  /project/desmith_488/kerenxu/SINGULARITY_CACHEDIR/cnvkit_latest.sif cnvkit.py scatter  -s 904459_T.aligned.duplicates_marked.recalibrated.cn{s,r} \
+-v /project/desmith_128/tanxin/scratch2/tumoroutput/batch2/mutect2_out/gather/sample904459_T.vcf.gz -i 904459_T -n L0015_01RC_G --y-min=-2.5 --y-max=2.5  --output ../cnv_graph/904459_T.baf.scatter.pdf
+
+singularity exec --bind /project/desmith_488,/project/desmith_128  /project/desmith_488/kerenxu/SINGULARITY_CACHEDIR/cnvkit_latest.sif cnvkit.py scatter  -s 913718_T.aligned.duplicates_marked.recalibrated.cn{s,r} \
+-v /project/desmith_128/tanxin/scratch2/tumoroutput/batch2/mutect2_out/gather/sample913718_T.vcf.gz -i 913718_T -n L0016_01RC_G --y-min=-2.5 --y-max=2.5  --output ../cnv_graph/913718_T.baf.scatter.pdf
