@@ -25,8 +25,6 @@ suppressPackageStartupMessages({
   library(BiocParallel)
 })
 
-message("==== START: PC-Relate (full genome, no chr split) ====")
-
 
 ## -----------------------------------------------------------
 ## 1. 路径

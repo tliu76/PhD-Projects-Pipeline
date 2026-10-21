@@ -11,8 +11,7 @@
 #SBATCH --output=/project2/desmith_128/tanxin/scratch1_new/mp2prt_gwas/filtered/code/genesis/0323_SV/revised/log/combine_%A_%a.out
 #SBATCH --error=/project2/desmith_128/tanxin/scratch1_new/mp2prt_gwas/filtered/code/genesis/0323_SV/revised/log/combine_%A_%a.err
 
-# 注意：合并文件通常不需要 20个CPU 和 60G 内存，我稍微调低了资源以更容易排队，
-# 如果你的文件非常巨大，请改回原来的数值。
+
 
 # 1. 定义表型数组
 PHENOS=(  "n.all_INT"                    "n.nonig_INT"                  "n.ig_INT"                     "n.total.least.rag_INT"       
@@ -37,19 +36,14 @@ PHENOS=(  "n.all_INT"                    "n.nonig_INT"                  "n.ig_IN
 )
  
   
-# 2. 获取当前 Job Array ID 对应的表型
-# SLURM_ARRAY_TASK_ID 会从 0 变到 71
 CURRENT_PHENO=${PHENOS[$SLURM_ARRAY_TASK_ID]}
 
-echo "Running combination for phenotype: $CURRENT_PHENO"
 
-# 工作目录
 cd /project2/desmith_128/tanxin/scratch1_new/mp2prt_gwas/filtered/code/genesis/0323_SV/result/null_model
 
 module load ver/2506 gcc/14.3.0
 module load r/4.5.0
 
-# 3. 运行 R 脚本，并将表型名称作为参数传递
 Rscript /project2/desmith_128/tanxin/scratch1_new/mp2prt_gwas/filtered/code/genesis/0323_SV/revised/7.combine_assoc.R "$CURRENT_PHENO"
 
 

@@ -11,7 +11,7 @@
 #SBATCH --output=/project2/desmith_128/tanxin/scratch1_new/mp2prt_gwas/filtered/code/genesis/0323_SV/revised/log/assoc_chr_%A_%a.out
 #SBATCH --error=/project2/desmith_128/tanxin/scratch1_new/mp2prt_gwas/filtered/code/genesis/0323_SV/revised/log/assoc_chr_%A_%a.err
 
-# 工作目录（根据你代码位置改）
+
 cd /project2/desmith_128/tanxin/scratch1_new/mp2prt_gwas/filtered/code/genesis/0323_SV/revised/result
 
 module load ver/2506 gcc/14.3.0
@@ -47,10 +47,7 @@ PHENOS=(  "n.all_INT"                    "n.nonig_INT"                  "n.ig_IN
     
 )
 R_SCRIPT="/project2/desmith_128/tanxin/scratch1_new/mp2prt_gwas/filtered/code/genesis/0323_SV/revised/6.single_assoc.R" 
-echo "======================================================"
-echo "Starting job array for Chromosome: ${CHR}"
-echo "Total phenotypes to process: ${#PHENOS[@]}"
-echo "======================================================"
+
 
 # 循环遍历每一个 phenotype
 for pheno in "${PHENOS[@]}"; do
@@ -67,11 +64,6 @@ for pheno in "${PHENOS[@]}"; do
         echo "Successfully finished ${pheno} on Chr ${CHR}"
     else
         echo "ERROR: Failed running ${pheno} on Chr ${CHR}"
-        # 即使报错也不要 exit，继续跑下一个 phenotype
     fi
 
 done
-
-echo "======================================================"
-echo "All phenotypes completed for Chromosome ${CHR}"
-echo "======================================================"

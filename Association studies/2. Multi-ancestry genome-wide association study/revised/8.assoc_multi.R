@@ -45,7 +45,7 @@ cat(">>> Running plots for phenotype:", trait, "\n")
 # ============================================
 base_dir <- "/project2/desmith_128/tanxin/scratch1_new/mp2prt_gwas/filtered/code/genesis/0323_SV/result/null_model"
 
-# 假设文件夹结构是 base_dir/phenotype_name/assoc_all_chr1_22.rds
+
 assoc_file <- file.path(base_dir, trait, "assoc_all_chr1_22.rds")
 outdir     <- file.path(base_dir, trait, "plots")
 
@@ -70,19 +70,7 @@ assoc$Score.pval <- as.numeric(assoc$Score.pval)
 # 移除 NA 值以防画图报错
 assoc <- assoc %>% filter(!is.na(Score.pval) & !is.na(chr) & !is.na(pos))
 
-# -----------------------------------------------------------
-# 【重要】关于 Candidate Gene 标注
-# 默认的 assoc 结果里只有 variant.id (如 "1:12345:A:C")。
-# 如果你有注释文件 (比如含有 variant.id 和 gene_name 列的 dataframe)，
-# 你可以在这里 merge 进去。
-# -----------------------------------------------------------
-# 示例（如果你有 gene 信息，请取消注释并修改）：
-# annot_df <- readRDS("path_to_annotation.rds") 
-# assoc <- left_join(assoc, annot_df, by="variant.id")
-# label_col <- "gene_name" # 设置为你想显示的列名
-# -----------------------------------------------------------
 
-# 如果没有 gene 列，我们默认使用 variant.id 进行标注
 if("gene_name" %in% colnames(assoc)){
   label_col <- "gene_name"
   cat("Using 'gene_name' for annotation.\n")
@@ -98,8 +86,7 @@ qqPlot_custom <- function(pval, trait_label="") {
   pval <- pval[!is.na(pval)]
   n <- length(pval)
   
-  # 为了加快大数据集画图速度，如果点太多，可以只画显著的和部分不显著的
-  # 这里保留你原始逻辑
+
   x <- 1:n
   
   chisq <- qchisq(1 - pval, df = 1)
@@ -149,8 +136,7 @@ genomewide_line <- -log10(5e-8)
 png(filename = man_file, width = 2000, height = 1000, res = 150)
 
 # 调用 manhattan
-# annotatePval: 设置为多少以下的 P 值会被标记 (这里设为 5e-8)
-# annotateTop: TRUE 表示只标记最显著的那个，FALSE 表示标记所有超过阈值的
+
 manhattan(
   assoc,
   chr = "chr", 

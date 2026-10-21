@@ -58,5 +58,4 @@ echo "Job Array ID: $IDX"
 echo "Processing Phenotype: ${TRAIT}"
 echo "------------------------------------------"
 
-# 3. 运行 R 脚本 # /project2/desmith_128/tanxin/scratch1_new/mp2prt_gwas/filtered/code/genesis/0323_SV/revised/8.assoc_multi_pheno.R
 Rscript /project2/desmith_128/tanxin/scratch1_new/mp2prt_gwas/filtered/code/genesis/0323_SV/revised/8.assoc_multi.R "${TRAIT}"

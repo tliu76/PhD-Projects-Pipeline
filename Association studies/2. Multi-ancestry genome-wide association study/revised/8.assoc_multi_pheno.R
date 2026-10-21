@@ -61,13 +61,8 @@ assoc$Score.pval <- as.numeric(assoc$Score.pval)
 # 移除 NA 值以防画图报错
 assoc <- assoc %>% filter(!is.na(Score.pval) & !is.na(chr) & !is.na(pos))
 
+
 # -----------------------------------------------------------
-# 【重要】关于 Candidate Gene 标注
-# 默认的 assoc 结果里只有 variant.id (如 "1:12345:A:C")。
-# 如果你有注释文件 (比如含有 variant.id 和 gene_name 列的 dataframe)，
-# 你可以在这里 merge 进去。
-# -----------------------------------------------------------
-# 示例（如果你有 gene 信息，请取消注释并修改）：
 # annot_df <- readRDS("path_to_annotation.rds") 
 # assoc <- left_join(assoc, annot_df, by="variant.id")
 # label_col <- "gene_name" # 设置为你想显示的列名

@@ -10,21 +10,6 @@
 #SBATCH --partition=epyc-64
 #SBATCH --account=desmith_128
 
-
-cd /scratch1/tanxinli/mp2prt_gwas/filtered/split
-#!/bin/bash
-#SBATCH --time=48:00:00
-#SBATCH --mail-type=END
-#SBATCH --output=/scratch1/tanxinli/output/merge_%A_%a.out
-#SBATCH --error=/scratch1/tanxinli/error/merge_%A_%a.errcd
-#SBATCH --job-name=merge
-#SBATCH -c 20
-#SBATCH --ntasks=1
-#SBATCH --mem=30G
-#SBATCH --partition=main
-#SBATCH --account=desmith_128
-#SBATCH --array=1
-
 cd /scratch1/tanxinli/mp2prt_gwas/filtered/split/split_by_chr
 
 # Load R (modify version as needed on your HPC)
