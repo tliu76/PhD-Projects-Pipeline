@@ -16,7 +16,7 @@ srun hostname
 
 export PATH="/project/desmith_488/tanxinli/SINGULARITY_CACHEDIR/:$PATH"
 
-cd /scratch/tanxinli/wgs.smoking.out/cnvkit.out/
+cd /scratch1/tanxinli/wgs.smoking.out/cnvkit.out/
 
 for i in {1..6}
 do
