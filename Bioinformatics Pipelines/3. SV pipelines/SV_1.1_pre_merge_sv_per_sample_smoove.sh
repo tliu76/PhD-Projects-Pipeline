@@ -54,6 +54,7 @@ tumor_dir="/project/desmith_128/recordstudy/batch3/bqsr.bam"
 #  -p $threads \
 #  --genotype $tumor_bam $normal_bam 
 
+
 singularity exec  /home1/tanxinli/smoove_latest.sif \
   smoove call \
   --outdir /scratch1/tanxinli/tumoroutput/batch3sv/smoove.out/ \
