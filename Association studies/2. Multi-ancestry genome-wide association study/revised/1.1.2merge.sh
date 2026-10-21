@@ -50,5 +50,3 @@ seqMerge(
 )
 
 EOF
-
-echo "Finished GDS merge at: $(date)"
