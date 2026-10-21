@@ -121,7 +121,7 @@ plink    --bfile all_geno_maf_hwe_mind.lifted.hg38.final \
          --a2-allele file_contains_ref.alt_switch_SNP 2 1 \
          --make-bed --out all_geno_maf_hwe_mind.lifted.hg38_ref
 
-############################################################
+########################################################################################################
 # Prepare for imputation
 Path to the file: 
 top_path='/scratch1/tanxinli/GUAT/GRECERE_GWAS_data/combined/topmed'
