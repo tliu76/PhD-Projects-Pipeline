@@ -1,0 +1,17 @@
+/home/epi2melabs/conda/bin/sniffles \
+--threads 4 \
+--sample-id 882949T --output-rnames \
+--minsvlen 30 \  #Minimum SV length (in bp) (default: 35)
+ --cluster-merge-pos 150 \ #Max.  merging distance for insertions and deletions on the same read and cluster in  non-repeat regions (default: 150)
+--input 882949T.haplotagged.cram \
+--reference GRCh38.primary_assembly_assembled_ERCC.genome.fa \
+--input-exclude-flags 2308 \
+--snf 882949T.wf_sv.snf \
+--tandem-repeats /cwg/data/wf_human_sv_trbed/hg38.trf.bed \
+--phase --vcf 882949T.sniffles.vcf"
+
+##bcftools_viewVersion=1.17+htslib-1.19.1
+##bcftools_viewCommand=view -O z 908423T.sniffles.vcf; Date=Mon Oct  7 23:25:18 2024
+##bcftools_viewCommand=view --threads 4 -T allChromosomes.bed --targets-overlap 1 -i 'INFO/SUPPORT >= 5' -r chr1,1,chr2,2,chr3,3,chr4,4,chr5,5,chr6,6,chr7,7,chr8,8,chr9,9,chr10,10,chr11,11,chr12,12,chr13,13,chr14,14,chr15,15,chr16,16,chr17,17,chr18,18,chr19,19,chr20,20,chr21,21,chr22,22,chrX,X,chrY,Y,chrM,M,chrMT,MT input.vcf.gz; Date=Mon Oct  7 23:25:20 2024
+##SnpEffVersion="5.1d (build 2022-04-19 15:49), by Pablo Cingolani"
+##SnpEffCmd="SnpEff  -noStats GRCh38.p13 input.vcf.gz "
