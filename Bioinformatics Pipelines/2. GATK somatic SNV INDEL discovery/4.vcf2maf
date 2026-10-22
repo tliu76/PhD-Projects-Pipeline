@@ -1,0 +1,42 @@
+#!/bin/bash
+#SBATCH --time=48:00:00
+#SBATCH --mail-type=END
+#SBATCH --output=/scratch1/tanxinli/output/4.vcf2maf_%A_%a.out
+#SBATCH --error=/scratch1/tanxinli/error/4.vcf2maf_%A_%a.errcd
+#SBATCH --job-name=vcf2maf
+#SBATCH -c 15
+#SBATCH --ntasks=1
+#SBATCH --mem=59G
+#SBATCH --partition=epyc-64
+#SBATCH --account=desmith_128
+#SBATCH --array=3
+
+module purge
+module load gcc/11.3.0  openblas/0.3.20
+eval "$(conda shell.bash hook)"
+
+conda activate /home1/tanxinli/.conda/envs/vep
+
+ref=/project/desmith_488/kerenxu/refs/GATK_resource_bundle/resources_broad_hg38_v0_Homo_sapiens_assembly38.fasta
+input_dir=/scratch2/tanxinli/wgs.smoking.out/BCFtools.filter.tumoronly.autosomal/vep
+output_dir=/scratch2/tanxinli/wgs.smoking.out/vcf2maf.out
+
+
+cd /scratch2/tanxinli/wgs.smoking.out/BCFtools.filter.tumoronly.autosomal/vep
+input_vep=(`cat list.id | sed -n ${SLURM_ARRAY_TASK_ID}p`)
+base=$(basename ${input_vep} .vep.vcf)
+output_maf=${base}.vep.maf
+
+perl /home1/tanxinli/.conda/envs/vep/bin/vcf2maf.pl --input-vcf  ${input_dir}/$input_vep \
+ --output-maf ${output_dir}/$output_maf \ 
+ --ref-fasta /project/desmith_488/kerenxu/refs/GATK_resource_bundle/resources_broad_hg38_v0_Homo_sapiens_assembly38.fasta \ 
+ --tumor-id  TM_${base} \
+ --vep-path /home1/tanxinli/.conda/envs/vep/bin \
+ --vep-data /project/desmith_488/tanxinli/vep/GRCh38/vep \
+ --species homo_sapiens\
+ --vep-forks 20  \
+ --vep-overwrite \
+ --ncbi-build GRCh38
+
+
+conda deactivate

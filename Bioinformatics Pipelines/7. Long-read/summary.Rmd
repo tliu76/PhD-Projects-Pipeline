@@ -1,0 +1,202 @@
+---
+title: "readvcf"
+output: html_document
+date: "2025-01-05"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir ="/project/desmith_128/recordstudy/cedars/summary")
+.libPaths("/project/desmith_488/tanxinli/R_lib")
+```
+
+
+```{r, echo=FALSE}
+
+
+library(vcfR)
+library(data.table)
+library(dplyr)
+library(tidyverse)
+#library(VariantAnnotation)
+
+```
+
+
+```{r, echo=FALSE}
+
+# print(vcf_files)
+# vcf_list <- lapply(vcf_files, read.vcfR)
+
+
+# read file path
+vcf_paths <- list.files(path = "/project/desmith_128/recordstudy/cedars/vcf", pattern = "^[0-9]+T\\.wf_sv\\.vcf\\.gz$", full.names = TRUE)
+
+# read file content 
+all_content.sv <-
+  vcf_paths %>%
+  lapply(read.vcfR) 
+
+#check the VCF data structure:
+head(all_content.sv[[2]])
+fix_data <- getFIX(all_content.sv[[2]])
+gt_data <- extract.gt(all_content.sv[[2]])
+info_data <- as.data.frame(all_content.sv[[2]]@fix[, "INFO"])
+
+
+
+all_filenames <- vcf_paths  %>%  as.data.frame() 
+colnames(all_filenames)[1] <- "V1"
+all_filenames <- all_filenames %>% separate(V1,c("junk", "name"), sep = "/vcf/") %>%  separate(name, c("sample_name","junk"), sep = ".wf") %>% dplyr::select(-"junk") 
+
+
+#rename the nest list
+names(all_content.sv) <- all_filenames$sample_name
+
+
+
+```
+
+
+https://knausb.github.io/vcfR_documentation/vcfR_object.html
+```{r, echo=FALSE}
+table(is.biallelic(all_content.sv[[2]]))
+#36884
+all_content.sv[[2]][is.biallelic(all_content.sv[[2]]),]
+
+head(all_content.sv[[1]]@fix)
+print(all_content.sv[[1]]@meta)
+```
+##read nested list and extract: 
+https://rdrr.io/cran/vcfR/man/getFIX.html
+getFIX(x, getINFO = FALSE)
+getCHROM(x)
+getPOS(x)
+getQUAL(x)
+getALT(x)
+getREF(x)
+getID(x)
+getFILTER(x)
+getINFO(x)
+
+```{r, echo=FALSE}
+# Extract fix and genotype data from VCF and calculate VAF
+
+results <- lapply(all_content.sv, function(vcf_obj) {
+  # Step 1: Extract fixed fields
+  fix_data <- getFIX(vcf_obj,getINFO = TRUE)
+  
+  # Convert to a data frame for easier handling
+  df_fix <- as.data.frame(fix_data)
+  
+  # Rename columns if needed (optional)
+  colnames(df_fix) <- c("CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO")
+  
+  # Extract the INFO column as a character vector
+info_column <- as.character(df_fix$INFO)
+
+# Function to extract specific variables from the INFO column
+extract_info <- function(info, key) {
+  pattern <- paste0(key, "=([^;]+)")  # Regex pattern to match key=value
+  matches <- regexpr(pattern, info)  # Find matches
+  
+  # Extract matched strings or return NA where no match is found
+  values <- ifelse(matches > 0, regmatches(info, matches), NA)
+  values <- sub(paste0(key, "="), "", values)  # Remove "key=" to keep only the value
+  
+  return(values)
+}
+
+# Extract specific fields from INFO and rename columns
+df_fix$precise_breakpoint <- ifelse(grepl("^PRECISE", info_column), "PRECISE", NA)
+df_fix$SV_TYPE <- extract_info(info_column, "SVTYPE")
+df_fix$SVLEN <- extract_info(info_column, "SVLEN")
+df_fix$END <- extract_info(info_column, "END")
+df_fix$CHR2 <- extract_info(info_column, "CHR2")
+df_fix$STRAND <- extract_info(info_column, "STRAND")
+df_fix$CLNVC <- extract_info(info_column, "CLNVC")
+df_fix$GENEINFO <- extract_info(info_column, "GENEINFO")
+df_fix$ANN <- extract_info(info_column, "ANN")
+df_fix$LOF <- extract_info(info_column, "LOF")
+df_fix$NMD <- extract_info(info_column, "NMD")
+
+# Ensure all extracted columns match the number of rows in df_fix
+stopifnot(nrow(df_fix) == length(df_fix$SVLEN))  # Check for SVLEN as an example
+
+   # Step 2: Extract genotype fields (GT, DR, DV)
+  gt_data <- extract.gt(vcf_obj, element = "GT")  # Genotype
+  #gq_data <- extract.gt(vcf_obj, element = "GQ")  # Genotype quality
+  dr_data <- extract.gt(vcf_obj, element = "DR")  # Reference reads
+  dv_data <- extract.gt(vcf_obj, element = "DV")  # Variant reads
+ 
+  # Step 3: Calculate VAF
+  # Convert DR and DV to numeric
+  dr_numeric <- apply(dr_data, 2, as.numeric)  # Convert DR to numeric
+  dv_numeric <- apply(dv_data, 2, as.numeric)  # Convert DV to numeric
+  # Calculate Variant Allele Frequency (VAF = DV / (DR + DV))
+  vaf <- dv_numeric / (dr_numeric + dv_numeric)
+  
+ # Step 4: Combine fixed fields, genotype data, and VAF
+  combined_df <- cbind(
+    df_fix,                 # Fixed fields
+    GT = as.character(gt_data),           # Genotype data
+   DR = as.numeric(dr_data),         # Reference reads
+   DV = as.numeric(dv_data),        # Variant reads
+  VAF = as.numeric(vaf)           # Variant Allele Frequency
+  )
+ colnames(combined_df)[(ncol(df_fix) + 1):ncol(combined_df)] <- c("GT", "DR", "DV", "VAF")
+  return(combined_df)  # Return the combined data frame
+})
+
+
+
+```
+
+
+
+```{r, echo=FALSE}
+# unlist all lists and change column name
+all_result <- do.call(rbind, lapply(names(results), function(name) {
+  # Extract each sub-list, add a name column, and return as data frame
+  cbind(sample_name = name, results[[name]])
+}))
+fwrite(all_result, "SV_four_samples.csv")
+
+all_result2 <- all_result %>% dplyr::select(c("sample_name","CHROM",  "POS" ,
+    "ID" ,  "REF" ,"ALT" ,  "QUAL" ,  "FILTER" ,"SV_TYPE" ,  "END"  ,"CHR2","STRAND" , "GT"  ,   "DR",
+    "DV"  ,  "VAF", "precise_breakpoint",   "SVLEN" , "CLNVC",  "GENEINFO",  "ANN", "LOF",  "NMD" ))
+
+table(all_result2$SV_TYPE)
+
+fwrite(all_result2, "/project/desmith_128/recordstudy/cedars/summary/SV_four_samples_noINFO.csv")
+
+
+all_result3 <- all_result2 %>% dplyr::filter(SV_TYPE =="BND") %>% dplyr::select(c("sample_name","CHROM",  "POS" ,
+    "ID" ,  "REF" ,"ALT" ,  "QUAL" ,  "FILTER" ,"SV_TYPE" ,  "END"  ,"CHR2","STRAND" , "GT"  ,   "DR",
+    "DV"  ,  "VAF", "precise_breakpoint",   "SVLEN" , "CLNVC",   "ANN", "LOF",  "NMD" ))
+table(all_result3$ANN)
+fwrite(all_result3, "/project/desmith_128/recordstudy/cedars/summary/SV_four_samples_BND.csv")
+
+
+
+
+#not limited to BND: 
+all_result4 <- all_result2  %>% dplyr::select(c("sample_name","CHROM",  "POS" ,
+    "ID" ,  "REF" ,"ALT" ,  "QUAL" ,  "FILTER" ,"SV_TYPE" ,  "END"  ,"CHR2","STRAND" , "GT"  ,   "DR",
+    "DV"  ,  "VAF", "precise_breakpoint",   "SVLEN"  ))
+
+fwrite(all_result4, "/project/desmith_128/recordstudy/cedars/summary/SV_four_samples_sniffles.csv")
+
+
+```
+
+
+```{r, echo=FALSE}
+all_result <- fread("SV_four_samples.csv")
+all_result2 <- fread("SV_four_samples_noINFO.csv")
+```
+
+
+```{r, echo=FALSE}
+names(all_result2)
+```
+
