@@ -1,0 +1,22 @@
+"0","library(vcfR)"
+"2","
+   *****       ***   vcfR   ***       *****
+   This is vcfR 1.15.0 
+     browseVignettes('vcfR') # Documentation
+     citation('vcfR') # Citation
+   *****       *****      *****       *****
+
+"
+"0","library(xml2)"
+"0","library(XML)"
+"0","library(MDALL)"
+"2","
+Attaching package: ‘MDALL’
+
+"
+"2","The following object is masked from ‘package:base’:
+
+    body
+
+"
+"0","options(max.print=1000)"

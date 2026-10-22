@@ -1,0 +1,124 @@
+---
+title: "multiplesamples"
+output: html_document
+date: "2024-09-23"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+##Wrap of analysis for multiple samples
+#1. Prepare the listing file of input files
+```{r, echo=FALSE}
+library(vcfR)
+library(xml2)
+library(XML)
+library(MDALL)
+options(max.print=1000)
+```
+
+#combined B-ALL FushionCatcher results
+```{r, echo=FALSE}
+setwd("/scratch1/tanxinli/rnaseq_out/FusionCatcher")
+all_paths.FusionCatcher <- list.files(path = "/scratch1/tanxinli/rnaseq_out/FusionCatcher", pattern = "*.FusionCatcher",full.names = TRUE)
+library(dplyr)
+
+read_file_from_path <- function(folder_path) {
+  # Construct the full file path
+  file_path <- file.path(folder_path, "final-list_candidate-fusion-genes.txt")
+  
+  # Check if the file exists
+  if (!file.exists(file_path)) {
+    stop("File 'mm' does not exist in the specified folder.")
+  }
+  
+  # Read the file (assuming it's a text file, adjust for other file types)
+  file_contents <- get_BALL_fusion(file_path,type = "fc")
+  
+  return(file_contents)
+}
+
+# Use lapply to process each file and return the filtered data in a list
+all_content.FusionCatcher<- lapply(all_paths.FusionCatcher, read_file_from_path)
+
+
+# file_fusioncatcher="./FusionCatcher/889722_T.FusionCatcher/final-list_candidate-fusion-genes.txt"
+# fusion_fc=get_BALL_fusion(file_fusioncatcher,type = "fc")
+# print(fusion_fc, n = Inf)
+# sum(fusion_fc$Spanning_unique_reads)
+
+
+library(tidyr)
+# read file name
+all_filenames <- all_paths.FusionCatcher %>% as.list()
+# combine file content list and file name list
+all_fc_lists <- mapply(c, all_content.FusionCatcher, all_filenames , SIMPLIFY = FALSE)
+# unlist all lists and change column name
+all_result <- rbindlist(all_fc_lists, fill = T)
+head(all_result)
+all_result_updated <- all_result %>%
+  separate(V1, c( "junk","sample_name"), sep = "FusionCatcher/") %>% select(-"junk") %>% separate(sample_name, c( "sample","junk"), sep = ".FusionCatcher") %>% select(-"junk")
+
+fwrite(all_result_updated, "/project/desmith_128/recordstudy/rna_seq/all-candidate-fusion-genes.csv")
+
+
+```
+
+##combined results from HTseq count
+
+```{r, echo=FALSE}
+all_paths.HTSeq <- list.files(path = "./HTSeq", pattern = "*.DUX4patched.HTSeq",full.names = TRUE)
+library(dplyr)
+# read file content
+# Define a function to read the file and filter the rows
+process_file <- function(file) {
+  # Read the file
+  data <- fread(file)
+
+  # Filter rows where column A starts with "ENSG"
+  filtered_data <- data[grepl("^ENSG", V1)]
+
+  return(filtered_data)
+}
+
+# Use lapply to process each file and return the filtered data in a list
+all_content.HTSeq <- lapply(all_paths.HTSeq, process_file)
+
+```
+
+
+```{r, echo=FALSE}
+df_listing=read.table("file_list.tsv",sep  = "\t",header = T)
+
+df_listing
+```
+
+
+
+```{r, echo=FALSE}
+library(tidyr)
+# read file name
+all_filenames <- all_paths.HTSeq %>% as.list()
+# combine file content list and file name list
+all_HTSeq_lists <- mapply(c, all_content.HTSeq, all_filenames, SIMPLIFY = FALSE)
+# unlist all lists and change column name
+all_result <- rbindlist(all_HTSeq_lists, fill = T)
+colnames(all_result) <- c("feature", "count","sample")
+
+all_result_updated <- all_result %>%
+  separate(sample, c( "junk","sample_name"), sep = "HTSeq/") %>% select(-"junk") %>% separate(sample_name, c( "sample","junk"), sep = ".DUX4") %>% select(-"junk")
+fwrite(all_result_updated, "/project/desmith_128/recordstudy/rnaseq/all_result_HTSeq.tsv")
+fwrite(all_result_updated, "/scratch1/tanxinli/rnaseq_out/Routput/all_result_HTSeq.csv")
+```
+
+
+```{r, echo=FALSE}
+
+#out_testMul=run_multiple_samples(file_listing = "file_list.tsv",featureN_PG = c(100,1058))
+# all_result2 <- rbindlist(all_content.HTSeq, fill = T)
+# colnames(all_result2) <- c("feature", "TestSample")
+
+
+```

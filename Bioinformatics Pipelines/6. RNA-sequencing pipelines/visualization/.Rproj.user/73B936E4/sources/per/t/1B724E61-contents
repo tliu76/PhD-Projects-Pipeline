@@ -1,0 +1,152 @@
+---
+title: "HTseq-Analysis for bulk RNA-seq (sample889722_T)"
+output:
+  pdf_document: default
+  html_document: default
+date: "2024-09-23"
+---
+
+##Read count data #One Sample 
+```{r, echo=FALSE ,message=FALSE, warning=FALSE}
+library(MDALL)
+options(max.print=1000)
+```
+
+```{r, echo=FALSE ,message=FALSE, warning=FALSE}
+library(dplyr)
+library(data.table)
+library(tidyr)
+library(tidyverse)
+library(data.table)
+library(umap)
+library(ggplot2)
+library(ggrepel)
+library(Rphenograph)
+library(cowplot)
+setwd("/scratch1/tanxinli/rnaseq_out/")
+#run_shiny_MDALL()
+
+df_count=read_input("./HTSeq/889722_T.DUX4patched.HTSeq",delimiter = "\t",header = F)
+names(df_count)
+df_count <- df_count[grepl("^ENSG", df_count$feature), ]
+
+
+```
+
+##Normalization with reference data 
+
+```{r, echo=FALSE ,message=FALSE, warning=FALSE}
+df_vst=get_vst_values(obj_in = obj_234_HTSeq,df_count = df_count)
+```
+
+##Get normalized expression values for feature genes
+```{r, echo=FALSE ,message=FALSE, warning=FALSE}
+#df_feateure_exp=get_geneExpression(df_vst = df_vst,genes = c("CDX2","CRLF2","PAX5"))
+df_feateure_exp=get_geneExpression(df_vst = df_vst,genes = c("ETV6"))
+```
+
+##3.1.4 Get gene expression box plot
+```{r, echo=FALSE ,message=FALSE, warning=FALSE,fig.width=10, fig.height=8, fig.align='center'}
+obj_boxplot=obj_merge(obj_in = obj_1821,df_in = df_vst,assay_name_in = "vst")
+draw_BoxPlot(obj_in = obj_boxplot,group.by = "diag_raw1",features = "ETV6",highlightLevel = "TestSample",plot_title = "Box Plot of Expression\nSample 889722_T")
+```
+
+##3.1.5 Imputation
+
+```{r, echo=FALSE ,message=FALSE, warning=FALSE}
+df_vst_i=f_imputation(obj_ref = obj_234_HTSeq,df_in = df_vst)
+```
+
+##3.1.6 Add testing sample to reference dataset for subtype prediction
+```{r, echo=FALSE ,message=FALSE, warning=FALSE}
+obj_=obj_merge(obj_in = obj_1821,df_in = df_vst_i,assay_name_in = "vst")
+```
+
+##3.1.7 Draw uMAP plot
+
+```{r, echo=FALSE ,message=FALSE, warning=FALSE,fig.width=10, fig.height=10, fig.align='center'}
+obj_=run_umap(obj_in = obj_,out_label = "umap",n_neighbors = 10,variable_n = c(1058),feature_panel = "keyFeatures")
+draw_DimPlot(obj_,group.by = "diag_raw",reduction = "umap",highlightLevel = "TestSample")
+```
+
+#3.1.8 Run PhenoGraph clustering and SVM prediction
+```{r, echo=FALSE ,message=FALSE, warning=FALSE,fig.width=10, fig.height=8, fig.align='center'}
+df_out_phenograph=get_PhenoGraphPreds(obj_in = obj_,feature_panel = "keyFeatures",SampleLevel = "TestSample",
+                                      neighbor_k = 10,
+                                      # variable_n_list = c(seq(100,1000,100),1058)
+                                      variable_n_list = c(100,1058)
+                                      )
+
+df_out_svm=get_SVMPreds(models_svm,df_in = df_vst_i)
+  
+df_pred=bind_rows(df_out_phenograph,df_out_svm) %>% mutate(N=sprintf("%04d",featureN))
+  
+gg_tilePlot(df_in = df_pred,x = "N",y = "method",var_col = "pred",x_tick_label_var = "featureN",title = "Predition Heatmap")
+```
+
+#3.1.9 Run RNAseqCNV
+```{r, echo=FALSE ,message=FALSE, warning=FALSE, fig.width=10, fig.height=8, fig.align='center',fig.fullwidth=TRUE}
+
+RNAseqCNV_out=run_RNAseqCNV(df_count = df_count,snv_file = "./Mutation/889722_T.HaplotypeCaller.vcf")
+
+CNV_label=paste0(RNAseqCNV_out$df_cnv_out$gender,";\n",RNAseqCNV_out$df_cnv_out$chrom_n,",",RNAseqCNV_out$df_cnv_out$alterations)
+chrom_n=RNAseqCNV_out$df_cnv_out$chrom_n
+
+print(CNV_label)
+print(chrom_n)
+
+```
+
+##Draw RNAseqCNV Plot
+```{r, echo=FALSE ,message=FALSE, warning=FALSE,fig.width=10, fig.height=8, fig.align='center',fig.fullwidth=TRUE}
+get_RNAseqCNV_plot(RNAseqCNV_out=RNAseqCNV_out, size1=1, size2=1)
+```
+
+##3.1.10 Get mutations
+```{r, echo=FALSE ,message=FALSE, warning=FALSE}
+
+out_mutation=get_BALL_mutation("./Mutation/889722_T.HaplotypeCaller.vcf")
+out_mutation$out_text_BALLmutation
+
+```
+
+
+##3.1.11 Get fusions
+#For fusionCaller:
+#'final-list_candidate-fusion-genes.txt' from FusionCatcher output
+```{r, echo=FALSE ,message=FALSE, warning=FALSE, max.print=100}
+file_fusioncatcher="./FusionCatcher/889722_T.FusionCatcher/final-list_candidate-fusion-genes.txt"
+fusion_fc=get_BALL_fusion(file_fusioncatcher,type = "fc")
+print(fusion_fc, n = Inf)
+sum(fusion_fc$Spanning_unique_reads)
+
+```
+##For cicero:
+#'final_fusions.txt' from Cicero output
+```{r, echo=FALSE ,message=FALSE, warning=FALSE}
+#file_cicero=fread("./Cierco/200101_T.Cierco/CICERO_DATADIR/200101_T.MarkDup.sorted.aligned/final_fusions.txt")
+
+fusion_c=get_BALL_fusion("./Cierco/903750_T.Cierco/CICERO_DATADIR/903750_T.MarkDup.sorted.aligned/final_fusions.txt",type = "c")
+fusion_c
+```
+
+
+
+```{r, echo=FALSE ,message=FALSE, warning=FALSE}
+##3.1.12 Get GEP prediction summarise
+# fusion_c <- NULL
+# df_sum=get_subtype_final(
+#   id="sample889722_T",
+#   df_feateure_exp = df_feateure_exp,
+#                   df_out_phenograph = df_out_phenograph,df_out_svm = df_out_svm,
+#                   out_mutation = out_mutation,
+#                   chrom_n = chrom_n,CNV_label = CNV_label,
+#                   fusion_fc = fusion_fc, fusion_c = fusion_c )
+# df_sum
+```
+
+
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

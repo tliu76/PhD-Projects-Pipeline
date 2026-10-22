@@ -1,0 +1,3 @@
+"0","obj_boxplot2=obj_merge(obj_in = obj_1821,df_in = df_vst2,assay_name_in = ""vst"")"
+"2","Joining with `by = join_by(feature)`"
+"0","draw_BoxPlot(obj_in = obj_boxplot2,group.by = ""diag_raw1"",features = ""CRLF2"",highlightLevel = ""TestSample"",plot_title = ""Box Plot of Expression\nSample 869252"")"

@@ -1,0 +1,241 @@
+---
+title: "Cierco"
+output: html_document
+date: "2024-10-08"
+---
+##Wrap of analysis for multiple samples
+#1. Prepare the listing file of input files
+```{r, echo=FALSE}
+library(vcfR)
+library(xml2)
+library(XML)
+library(MDALL)
+options(max.print=1000)
+library(data.table)
+```
+
+
+#Combine fusionCatcher original output txt
+```{r, echo=FALSE}
+setwd("/scratch1/tanxinli/rnaseq_out/Cierco")
+
+# Assuming the base directory contains the sample folders and their structure
+base_dir <- "/scratch1/tanxinli/rnaseq_out/Cierco"  # Replace this with the path to your main directory
+
+# List of sample IDs
+sample_ids <-  c("200101_T", "808693_T", "869252_T",
+"878553_T",
+"882949_T",
+"883468_T",
+"883783_T",
+"889722_T",
+"896578_T",
+"899260_T",
+"900129_T",
+"901068_T",
+"903496_T",
+"903750_T",
+"904459_T_b",
+"905066_T",
+"906484_T",
+"908423_T",
+"911087_T_b",
+"913718_T",
+"918789_T" )
+
+# Function to generate the path for each sample
+get_file_path <- function(sample_id) {
+  file.path(base_dir, paste0(sample_id, ".Cierco/CICERO_DATADIR"),  paste0(sample_id, ".MarkDup.sorted.aligned"), "final_fusions.txt")
+}
+
+# Generate the paths for all 10 samples
+file_paths <- lapply(sample_ids, get_file_path)
+
+# Print the list of file paths
+print(file_paths)
+
+file_paths[[1]]
+
+library(dplyr)
+
+read_file_from_path <- function(file_path) {
+  # Construct the full file path
+ 
+  # Check if the file exists
+  if (!file.exists(file_path)) {
+    stop("File 'mm' does not exist in the specified folder.")
+  }
+  
+  # Read the file (assuming it's a text file, adjust for other file types)
+  file_contents <- fread(file_path,header=T)
+  
+  return(file_contents)
+}
+
+# Use lapply to process each file and return the filtered data in a list
+all_content.Cierco<- lapply(file_paths, read_file_from_path)
+
+
+
+
+library(tidyr)
+# read file name
+all_filenames <- file_paths %>% as.list()
+# combine file content list and file name list
+all_fc_lists <- mapply(c, all_content.Cierco, all_filenames , SIMPLIFY = FALSE)
+# unlist all lists and change column name
+all_result <- rbindlist(all_fc_lists, fill = T)
+head(all_result$V1)
+all_result_updated <- all_result %>%
+  separate(V1, c( "sample_name","junk"), sep = ".Cierco/CICERO_DATADIR") %>% select(-"junk") %>% separate(sample_name, c( "junk","sample_name"), sep = "Cierco/") %>% select(-"junk")
+names(all_result_updated)
+
+fwrite(all_result_updated, "/project/desmith_128/recordstudy/rna_seq/allsample_Cierco_output.csv")
+
+allsample_Cierco <- fread("/project/desmith_128/recordstudy/rna_seq/allsample_Cierco_output.csv")
+```
+
+#B-ALL candidate fusion
+
+```{r, echo=FALSE}
+setwd("/scratch1/tanxinli/rnaseq_out/Cierco")
+all_paths.Cierco <- file_paths
+library(dplyr)
+
+read_file_from_path <- function(file_path) {
+  # Check if the file exists
+  if (!file.exists(file_path)) {
+    stop("File 'mm' does not exist in the specified folder.")
+  }
+  
+  # Read the file (assuming it's a text file, adjust for other file types)
+  file_contents <- get_BALL_fusion(file_path,type = "c")
+  
+  return(file_contents)
+}
+
+# Use lapply to process each file and return the filtered data in a list
+all_content.Cierco<- lapply(all_paths.Cierco, read_file_from_path)
+
+
+# file_fusioncatcher="./FusionCatcher/889722_T.FusionCatcher/final-list_candidate-fusion-genes.txt"
+# fusion_fc=get_BALL_fusion(file_fusioncatcher,type = "fc")
+# print(fusion_fc, n = Inf)
+# sum(fusion_fc$Spanning_unique_reads)
+
+
+library(tidyr)
+# read file name
+all_filenames <- all_paths.Cierco%>% as.list()
+# combine file content list and file name list
+all_c_lists <- mapply(c, all_content.Cierco, all_filenames , SIMPLIFY = FALSE)
+# unlist all lists and change column name
+all_result <- rbindlist(all_c_lists, fill = T)
+head(all_result)
+all_result_updated <- all_result %>%
+  separate(V1, c( "sample_name","junk"), sep = ".Cierco/CICERO_DATADIR") %>% select(-"junk") %>% separate(sample_name, c( "junk","sample_name"), sep = "Cierco/") %>% select(-"junk")
+
+fwrite(all_result_updated, "/project/desmith_128/recordstudy/rna_seq/all-candidate-fusion-Cierco.csv")
+
+
+
+```
+
+
+#original get_BALL_fusion function: 
+```{r, echo=FALSE}
+get_BALL_fusion=function(file_fusion="",type,cutoff=2){
+  if(is.null(file_fusion)){fusion_merge=data.frame()}
+  else if(is.na(file_fusion)){fusion_merge=data.frame()}
+  else if(file_fusion==""){fusion_merge=data.frame()}
+  else if(!file.exists(file_fusion)){fusion_merge=data.frame()}
+  else if (length(readLines(file_fusion))<=1){fusion_merge=data.frame()}
+  else {
+    #read fusion file
+    if(tolower(type) %in% c("fustioncatcher","fc")){
+      df_fusion=as.data.frame(data.table::fread(input = file_fusion))
+      df_fusion=df_fusion[c(1,2,5,6)]
+      names(df_fusion)=c("gene1","gene2","feature1","feature2")
+      df_fusion=df_fusion %>%
+        filter(feature1>0 & feature2>0) %>%
+        arrange(desc(feature2),desc(feature1)) %>%
+        filter(!(is.na(gene1) | is.na(gene2))) %>%
+        group_by(gene1,gene2) %>%
+        slice_head(n=1) %>%
+        ungroup()
+    }
+
+    if(tolower(type) %in% c("cicero","c")){
+      df_fusion=as.data.frame(data.table::fread(input = file_fusion))
+      df_fusion=df_fusion[c(2,7,13,14)]
+      names(df_fusion)=c("gene1","gene2","feature1","feature2")
+      df_fusion=df_fusion %>%
+        filter(feature1>0 & feature2>0) %>%
+        arrange(desc(feature2),desc(feature1)) %>%
+        filter(!(is.na(gene1) | is.na(gene2))) %>%
+        group_by(gene1,gene2) %>%
+        slice_head(n=1) %>%
+        ungroup()
+    }
+
+    df_fusion$gene1=gsub("@","",df_fusion$gene1);df_fusion$gene2=gsub("@","",df_fusion$gene2);
+
+    #get fusions in file
+    df_fusion1=bind_rows(
+      df_fusion %>%
+        mutate(fusion=paste0(gene1,"::",gene2),
+               fusion_ordered=fusion) %>%
+        select(fusion,fusion_ordered,feature1,feature2) %>%
+        tidyr::separate_rows(fusion_ordered, sep = "::") %>% distinct(),
+
+      df_fusion %>%
+        distinct() %>%
+        group_by(gene1,gene2) %>%
+        mutate(fusion=paste0(gene1,"::",gene2),
+               fusion_ordered=paste0(sort(unlist(strsplit(fusion,"::"))),collapse = "::")) %>%
+        ungroup() %>%
+        select(fusion_ordered,fusion,feature1,feature2)
+    )
+
+    #merge with info
+    # x=BALL.fusion
+    fusion_merge=BALL.fusion %>% left_join(df_fusion1) %>%
+      filter(!is.na(fusion)) %>%
+      select(fusion,feature1,feature2,fusionFeature,Subtype,note,subtypesignificance) %>%
+      mutate(subtype_info=paste0(Subtype,"@",note,",",subtypesignificance))
+
+    if("CRLF2 fusion" %in% fusion_merge$note){
+      fusion_merge=fusion_merge[!fusion_merge$note %in% c("adjacent to CRLF2"),]
+    }
+
+    fusion_merge=fusion_merge %>% group_by(fusion,feature1,feature2) %>%
+      mutate(subtype_info=paste0(sort(subtype_info),collapse = ";")) %>%
+      ungroup() %>%
+      select(fusion,feature1,feature2,Subtype,subtype_info) %>%
+      distinct() %>%
+      arrange(desc(feature2),desc(feature1))
+
+    if(any((fusion_merge$feature1>=cutoff & fusion_merge$feature2 >=cutoff) | fusion_merge$feature1+fusion_merge$feature2 >= 5)){
+      # names(fusion_merge)=c('FusionInFile',"feature1",'feature2','FusionFeature',"RelatedSubtype","SubtypeSignificance","ConfidenceToRelatedSubtype")
+
+      fusion_merge=fusion_merge %>% filter((feature1>=cutoff & feature2 >=cutoff) | feature1+feature2>=5)
+
+      names(fusion_merge)=c("FusionInFile","feature1","feature2","PossibleSubtype","SubtypeInfo")
+      if(tolower(type) %in% c("fustioncatcher","fc")){names(fusion_merge)[2:3]=c("Spanning_pairs","Spanning_unique_reads")}
+      if(tolower(type) %in% c("cicero","c")){names(fusion_merge)[2:3]=c("readsA","readsB")}
+      fusion_merge$method=type
+
+    } else {
+      fusion_merge=data.frame()
+    }
+
+    #get output
+  }
+
+  fusion_merge
+}
+```
+
+
+```{r, echo=FALSE}
+```

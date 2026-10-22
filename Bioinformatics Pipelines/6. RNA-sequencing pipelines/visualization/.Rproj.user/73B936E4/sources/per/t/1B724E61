@@ -1,0 +1,28 @@
+{
+    "id": "1B724E61",
+    "path": "/scratch1/tanxinli/rnaseq_out/HTSeq.Rmd",
+    "project_path": null,
+    "type": "r_markdown",
+    "hash": "1002365051",
+    "contents": "",
+    "dirty": false,
+    "created": 1727127791652.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "tempName": "Untitled1",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "129,0",
+        "scrollLine": "0",
+        "last_setup_crc32": ""
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1728364866,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1728364866646,
+    "read_only": false,
+    "read_only_alternatives": []
+}

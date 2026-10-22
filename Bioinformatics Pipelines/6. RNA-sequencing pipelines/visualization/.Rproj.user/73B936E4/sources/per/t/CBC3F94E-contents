@@ -1,0 +1,96 @@
+---
+title: "HTseq"
+output: html_document
+date: "2024-09-23"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Read count data #One Sample 808693_T
+```{r, echo=FALSE}
+library(MDALL)
+
+df_count2=read_input("./HTSeq/869252_T.DUX4patched.HTSeq",delimiter = "\t",header = F)
+names(df_count2)
+df_count2 <- df_count[grepl("^ENSG", df_count2$feature), ]
+
+
+```
+
+##Normalization with reference data 
+
+```{r, echo=FALSE}
+df_vst2=get_vst_values(obj_in = obj_234_HTSeq,df_count = df_count2)
+```
+
+##Get normalized expression values for feature genes
+```{r, echo=FALSE}
+df_feateure_exp2=get_geneExpression(df_vst = df_vst2,genes = c("CDX2","CRLF2","NUTM1"))
+```
+
+##3.1.4 Get gene expression box plot
+```{r, echo=FALSE}
+obj_boxplot2=obj_merge(obj_in = obj_1821,df_in = df_vst2,assay_name_in = "vst")
+draw_BoxPlot(obj_in = obj_boxplot2,group.by = "diag_raw1",features = "CRLF2",highlightLevel = "TestSample",plot_title = "Box Plot of Expression\nSample 869252")
+```
+
+##3.1.5 Imputation
+
+```{r, echo=FALSE}
+df_vst_i2=f_imputation(obj_ref = obj_234_HTSeq,df_in = df_vst2)
+```
+
+##3.1.6 Add testing sample to reference dataset for subtype prediction
+```{r, echo=FALSE}
+obj2_=obj_merge(obj_in = obj_1821,df_in = df_vst_i2,assay_name_in = "vst")
+```
+
+##3.1.7 Draw uMAP plot
+
+```{r, echo=FALSE}
+obj_=run_umap(obj_in = obj2_,out_label = "umap",n_neighbors = 10,variable_n = c(1058),feature_panel = "keyFeatures")
+draw_DimPlot(obj2_,group.by = "diag_raw",reduction = "umap",highlightLevel = "TestSample")
+```
+
+#3.1.8 Run PhenoGraph clustering and SVM prediction
+```{r, echo=FALSE}
+df_out_phenograph=get_PhenoGraphPreds(obj_in = obj_,feature_panel = "keyFeatures",SampleLevel = "TestSample",
+                                      neighbor_k = 10,
+                                      # variable_n_list = c(seq(100,1000,100),1058)
+                                      variable_n_list = c(100,1058)
+                                      )
+
+df_out_svm=get_SVMPreds(models_svm,df_in = df_vst_i)
+  
+df_pred=bind_rows(df_out_phenograph,df_out_svm) %>% mutate(N=sprintf("%04d",featureN))
+  
+gg_tilePlot(df_in = df_pred,x = "N",y = "method",var_col = "pred",x_tick_label_var = "featureN",title = "Predition Heatmap")
+```
+
+#3.1.9 Run RNAseqCNV
+```{r, echo=FALSE}
+
+RNAseqCNV_out=run_RNAseqCNV(df_count = df_count,snv_file = "./Mutation/808693_T.HaplotypeCaller.vcf")
+
+CNV_label=paste0(RNAseqCNV_out$df_cnv_out$gender,";\n",RNAseqCNV_out$df_cnv_out$chrom_n,",",RNAseqCNV_out$df_cnv_out$alterations)
+chrom_n=RNAseqCNV_out$df_cnv_out$chrom_n
+
+print(CNV_label)
+print(chrom_n)
+
+```
+
+##Draw RNAseqCNV Plot
+```{r, echo=FALSE}
+get_RNAseqCNV_plot(RNAseqCNV_out=RNAseqCNV_out)
+```
+
+##3.1.10 Get mutations
+```{r, echo=FALSE}
+
+out_mutation=get_BALL_mutation("./Mutation/808693_T.HaplotypeCaller.vcf")
+out_mutation$out_text_BALLmutation
+
+```
