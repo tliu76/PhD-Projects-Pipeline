@@ -46,14 +46,6 @@ tumor_bam="${matching_name}.aligned.duplicates_marked.recalibrated.bam"
 tumor_dir="/project/desmith_128/recordstudy/batch3/bqsr.bam"
 
 # joint call matched tumor normal per sample 
-#singularity exec /project/desmith_488/kerenxu/SINGULARITY_CACHEDIR/smoove_latest.sif \
-#  smoove call --outdir /scratch2/tanxinli/wgs.smoking.out/smoove.out \
-#  --name sample$sample_name \
-#  --exclude $exclude_bed \
-#  --fasta $ref \
-#  -p $threads \
-#  --genotype $tumor_bam $normal_bam 
-
 
 singularity exec  /home1/tanxinli/smoove_latest.sif \
   smoove call \
