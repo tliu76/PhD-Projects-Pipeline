@@ -1,0 +1,221 @@
+---
+title: "mx_plot"
+output: html_document
+date: "2024-12-05"
+---
+
+```{r setup, include=FALSE}
+.libPaths("/home1/tanxinli/R_lib")
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r , echo=FALSE}
+.libPaths("/home1/tanxinli/R_lib")
+library(data.table)
+library(dplyr)
+library(RColorBrewer)
+```
+
+https://github.com/RitchieLab/eQTpLot
+```{r , echo=FALSE}
+devtools::install_github("RitchieLab/eQTpLot")
+devtools::install_github("SFUStatgen/LDheatmap")
+Sys.setenv(R_REMOTES_NO_ERRORS_FROM_WARNINGS=TRUE)
+```
+
+
+```{r , echo=FALSE}
+library("eQTpLot")
+```
+
+
+#locuszoomr
+```{r , echo=FALSE}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+BiocManager::install("ensembldb")
+BiocManager::install("EnsDb.Hsapiens.v86")
+install.packages("locuszoomr")
+
+```
+
+https://blog.csdn.net/weixin_49214410/article/details/141218250
+https://cran.r-project.org/web/packages/locuszoomr/vignettes/locuszoomr.html
+rs75929455 chr5_132643958_TCA_T_b38
+rs11955168 chr5_132621215_C_T_b38
+rs80094086 chr5_132644789_G_A_b38
+rs181273766 chr5_132656129_A_C_b38
+
+```{r , echo=FALSE}
+library(locuszoomr)
+library(EnsDb.Hsapiens.v86)
+library(ensembldb)
+library(data.table)
+library(dplyr)
+rad_meta_chr5 <- fread("/scratch1/tanxinli/GUAT/checkbim_impute/binary/meta-analysis/rsidlocuszoom/METAANALYSIS_nogc_nop_Rsq_filtering_flipped07271_locuszoom_rsid.txt")
+
+colnames(rad_meta_chr5) <- c("chrom","pos","ID","effect_allele","other_allele","beta","se","p",
+   "Direction",  "HetISq",   "HetChiSq" ,  "HetDf"  ,    "HetPVal"  ,  "rsid"   )
+
+if (require(EnsDb.Hsapiens.v75)) {
+loc <- locus(data = rad_meta_chr5, gene = 'RAD50', flank = 5e5,
+             ens_db = "EnsDb.Hsapiens.v75")
+summary(loc)
+locus_plot(loc)
+}
+
+
+###GWAS plot
+if (require(EnsDb.Hsapiens.v86)) {  # Use EnsDb.Hsapiens.v86 for hg38 build
+  
+  # Specify the locus around the reference SNP 'rs11955168'
+  loc <- locus(data = rad_meta_chr5, labs="rsid", chrom="chrom", pos="pos", p="p", index_snp = "rs11955168",  flank = c(5e5,5e5), #+-500kb
+               ens_db = "EnsDb.Hsapiens.v86")
+  
+
+  loc <-link_LD(loc,pop = "AMR", token="89c7356bd070") 
+   loc <-link_recomb(loc, genome="hg19")
+  # Plot the locus with LD information and recombination rate
+  locus_plot(loc, labels=c("index","rs181273766","rs80094086","rs75929455" ),
+             label_x = c(-18, 6, 19,-5))
+}
+```
+
+
+##eqtl
+
+```{r , echo=FALSE}
+#eqtl_3 <- fread("mx_eqtl3.csv")
+eqtl_3 %>% dplyr::filter(variant_id=="rs181273766")
+```
+
+
+```{r , echo=FALSE}
+if (require(EnsDb.Hsapiens.v86)) {  # Use EnsDb.Hsapiens.v86 for hg38 build
+  
+  # Specify the locus around the reference SNP 'rs11955168'
+  loc <- locus(data = eqtl_3, labs="variant_id", chrom="CHR", pos="POS", yvar="pval_nominal", index_snp = "rs11955168",  flank = c(1e5,1e5), #+-500kb
+               ens_db = "EnsDb.Hsapiens.v86")
+ locus_plot(loc)
+  loc <-link_LD(loc,pop = "AMR", token="89c7356bd070") 
+ # loc <-link_recomb(loc, genome="hg19")
+  # Plot the locus with LD information and recombination rate
+  locus_plot(loc, labels=c("index","rs181273766","rs80094086","rs75929455" ),
+             label_x = c(-15, 18, 6,-5),
+             label_y =c(60, 60, 50, 40), ylim=c(0,30),legend_pos = "topleft" , pcutoff = 0, col = "grey")
+}
+```
+
+
+```{r , echo=FALSE}
+if (require(EnsDb.Hsapiens.v86)) {  # Use EnsDb.Hsapiens.v86 for hg38 build
+  
+  # Specify the locus around the reference SNP 'rs11955168'
+  loc <- locus(data = eqtl_3, labs="variant_id", chrom="CHR", pos="POS",  p  ="pval_nominal", index_snp = "rs181273766", flank = c(1e5,1e5), #+-500kb
+               ens_db = "EnsDb.Hsapiens.v86")
+  
+
+  loc <-link_LD(loc,pop = "AMR", token="89c7356bd070") 
+ # loc <-link_recomb(loc, genome="hg19")
+  # Plot the locus with LD information and recombination rate
+  locus_plot(loc, labels=c("rs11955168","index","rs80094086","rs75929455" ),
+             label_x = c(-15, 18, 6,-5),
+             label_y =c(60, 60, 50, 40), ylim=c(0,90),legend_pos = "topright" , pcutoff = 0, col = "grey")
+}
+
+```
+
+
+```{r , echo=FALSE}
+loc2 <- locus(data = rad_meta_chr5, labs="rsid", chrom="chrom", pos="pos", gene=p="p", index_snp = "rs11955168",  flank = c(5e5,5e5),LD = "r2",
+              ens_db = "EnsDb.Hsapiens.v86")
+loc2 <- link_eqtl(loc2, pop ="AMR",token = "89c7356bd070")
+
+```
+
+
+```{r , echo=FALSE}
+locb <- locus(data = eqtl_3, labs="variant_id", chrom="CHR", pos="POS", index_snp = "rs11955168", yvar ="slope", index_snp = "rs11955168",  flank = c(5e5,5e5), #+-500kb
+               ens_db = "EnsDb.Hsapiens.v86")
+locus_plot(locb,)
+```
+
+##install("eQTpLot")
+CONVERT GENE https://acribbs.github.io/blog/r-convert-a-ensembl-gene-id-to-gene-symbol/
+
+https://acribbs.github.io/blog/r-convert-a-ensembl-gene-id-to-gene-symbol/
+```{r , echo=FALSE}
+library(eQTpLot)
+rad_meta_chr5 <- fread("/scratch1/tanxinli/GUAT/checkbim_impute/binary/meta-analysis/rsidlocuszoom/METAANALYSIS_nogc_nop_Rsq_filtering_flipped07271_locuszoom_rsid.txt")
+
+colnames(rad_meta_chr5) <- c("chrom","pos","ID","effect_allele","other_allele","beta","se","p",
+   "Direction",  "HetISq",   "HetChiSq" ,  "HetDf"  ,    "HetPVal"  ,  "rsid"   )
+
+
+#flip the beta:
+rad_meta_chr5 <- rad_meta_chr5 %>%
+  separate(ID, into = c("chr", "POS", "ref", "alt"), sep = ":", remove = FALSE) %>%
+  select(-chr, -POS)
+rad_meta_chr5[rad_meta_chr5$effect_allele != rad_meta_chr5$alt,'beta'] = -rad_meta_chr5[rad_meta_chr5$effect_allele != rad_meta_chr5$alt,'beta']
+
+rad_meta_chr5 <-  rad_meta_chr5 %>% rename("CHR" ="chrom", "BP" ="pos","SNP" = "rsid","P"="p", "BETA"="beta") 
+gwad.df <- rad_meta_chr5  %>% select(c("CHR", 'BP', 'SNP', 'BETA',  'P'))
+ fwrite(gwad.df, "gwas.df.csv")
+ gwad.df <- fread("gwas.df.csv")
+#convert ENSG id to gene symbol 
+https://acribbs.github.io/blog/r-convert-a-ensembl-gene-id-to-gene-symbol/
+library(AnnotationDbi)
+library(org.Hs.eg.db)
+
+data = eqtl_3[,"gene_id"]
+colnames(data) <- "ENSEMBL"
+data$ENSEMBL <- gsub("\\.\\d+$", "", data$ENSEMBL)
+
+data$ENSEMBL <- as.character(data$ENSEMBL)
+data = as.vector(data)
+keys_vector <- data[[1]] 
+
+annots <- AnnotationDbi::select(org.Hs.eg.db, keys=keys_vector, 
+                columns="SYMBOL", keytype="ENSEMBL")
+annots  <- unique(annots )
+eqtl_3$ENSEMBL <- gsub("\\.\\d+$", "", eqtl_3$gene_id)
+result2 <- eqtl_3 %>% left_join(annots, by="ENSEMBL")
+result2$SYMBOL[result2$ENSEMBL == "ENSG00000234290"] <- "IRF1"
+result2$SYMBOL[result2$SYMBOL == "SEPT8"] <- "SEPTIN-8"
+#SEPTIN8
+result <- result2 %>% select(c("variant_id","SYMBOL","pval_nominal","slope"))
+result$Tissue = "Whole_blood"
+colnames(result) <- c("SNP.Id", "Gene.Symbol", "P.Value", "NES", "Tissue")
+fwrite(result,"eqtl.df.csv")
+```
+
+https://useast.ensembl.org/Homo_sapiens/Transcript/Idhistory?g=ENSG00000125347;r=5:132468890-132473043;t=ENST00000443093
+https://rdrr.io/github/RitchieLab/eQTpLot/src/R/eQTpLot.R
+
+```{r , echo=FALSE}
+
+ eQTpLot(GWAS.df = gwad.df, eQTL.df = result, gene = c("IRF1-AS"), 
+          gbuild = "hg38",  trait = "ALL", tissue =  "Whole_blood", leadSNP="rs181273766")
+
+# ggsave(p, "/project/desmith_128/tanxin/project2/eQTL/eqtl/IRF1AS.png",width = 600, height = 600, dpi=600)
+```
+
+
+```{r , echo=FALSE}
+eQTpLot(GWAS.df = gwad.df, eQTL.df = result, gene = c("SEPT8"), 
+          gbuild = "hg38",  trait = "ALL", tissue =  "Whole_blood")
+#ggsave(p1, "p1.png",width = 600, height = 600, dpi=600)
+```
+
+
+```{r , echo=FALSE}
+result2 %>% dplyr::filter(ENSEMBL=="ENSG00000164402")
+result2 %>% dplyr::filter(ENSEMBL=="ENSG00000164402")
+```
+
+
+```{r , echo=FALSE}
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

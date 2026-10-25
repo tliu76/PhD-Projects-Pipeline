@@ -1,0 +1,105 @@
+---
+title: "imp_plot"
+output: html_document
+date: "2024-12-06"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+rs75929455 chr5_132643958_TCA_T_b38
+rs11955168 chr5_132621215_C_T_b38
+rs80094086 chr5_132644789_G_A_b38
+rs181273766 chr5_132656129_A_C_b38
+
+```{r , echo=FALSE}
+library(locuszoomr)
+library(EnsDb.Hsapiens.v86)
+library(ensembldb)
+library(data.table)
+library(dplyr)
+rad_meta_chr5 <- fread("/scratch1/tanxinli/GUAT/checkbim_impute/binary/meta-analysis/rsidlocuszoom/METAANALYSIS_nogc_nop_Rsq_filtering_flipped07271_locuszoom_rsid.txt")
+
+colnames(rad_meta_chr5) <- c("chrom","pos","ID","effect_allele","other_allele","beta","se","p",
+   "Direction",  "HetISq",   "HetChiSq" ,  "HetDf"  ,    "HetPVal"  ,  "rsid"   )
+
+fwrite(rad_meta_chr5,"rad_meta_chr5.csv")
+
+
+
+###GWAS plot
+if (require(EnsDb.Hsapiens.v86)) {  # Use EnsDb.Hsapiens.v86 for hg38 build
+  
+  # Specify the locus around the reference SNP 'rs11955168'
+  loc <- locus(data = rad_meta_chr5, labs="rsid", chrom="chrom", pos="pos", p="p",gene='RAD50', index_snp = "rs11955168",  flank = c(5e5,5e5), #+-500kb
+               ens_db = "EnsDb.Hsapiens.v86")
+  
+
+  loc <-link_LD(loc,pop = "AMR", token="89c7356bd070") 
+   loc <-link_recomb(loc, genome="hg19")
+  # Plot the locus with LD information and recombination rate
+  locus_plot(loc, labels=c("index","rs181273766","rs80094086","rs75929455" ),
+             label_x = c(-18, 6, 18,-5))
+}
+```
+
+
+##eqtl
+
+```{r , echo=FALSE}
+eqtl_3 <- fread("imp_eqtl3.csv")
+eqtl_3 %>% dplyr::filter(variant_id=="rs11955168")
+```
+
+
+```{r , echo=FALSE}
+if (require(EnsDb.Hsapiens.v86)) {  # Use EnsDb.Hsapiens.v86 for hg38 build
+  
+  # Specify the locus around the reference SNP 'rs11955168'
+  loc <- locus(data = eqtl_3, labs="variant_id", chrom="CHR", pos="POS",  p  ="pval_nominal", index_snp = "rs11955168",  flank = c(5e5,5e5), #+-500kb
+               ens_db = "EnsDb.Hsapiens.v86")
+  
+
+  loc <-link_LD(loc,pop = "AMR", token="89c7356bd070") 
+ # loc <-link_recomb(loc, genome="hg19")
+  # Plot the locus with LD information and recombination rate
+  locus_plot(loc, labels=c("index","rs181273766","rs80094086","rs75929455" ),
+             label_x = c(-15, 18, 6,-5),
+             label_y =c(60, 60, 50, 40), ylim=c(0,90),legend_pos = "topright" , pcutoff = 0, col = "grey")
+}
+```
+
+
+```{r , echo=FALSE}
+if (require(EnsDb.Hsapiens.v86)) {  # Use EnsDb.Hsapiens.v86 for hg38 build
+  
+  # Specify the locus around the reference SNP 'rs11955168'
+  loc <- locus(data = eqtl_3, labs="variant_id", chrom="CHR", pos="POS",  p  ="pval_nominal", index_snp = "rs181273766",  flank = c(5e5,5e5), #+-500kb
+               ens_db = "EnsDb.Hsapiens.v86")
+  
+
+  loc <-link_LD(loc,pop = "AMR", token="89c7356bd070") 
+ # loc <-link_recomb(loc, genome="hg19")
+  # Plot the locus with LD information and recombination rate
+  locus_plot(loc, labels=c("rs11955168","index","rs80094086","rs75929455" ),
+             label_x = c(-15, 18, 6,-5),
+             label_y =c(60, 60, 50, 40), ylim=c(0,90),legend_pos = "topright" , pcutoff = 0, col = "grey")
+}
+
+```
+
+
+```{r , echo=FALSE}
+loc2 <- locus(data = rad_meta_chr5, labs="rsid", chrom="chrom", pos="pos", gene=p="p", index_snp = "rs11955168",  flank = c(5e5,5e5),LD = "r2",
+              ens_db = "EnsDb.Hsapiens.v86")
+loc2 <- link_eqtl(loc2, pop ="AMR",token = "89c7356bd070")
+
+```
+
+
+```{r , echo=FALSE}
+locb <- locus(data = eqtl_3, labs="variant_id", chrom="CHR", pos="POS", index_snp = "rs11955168", yvar ="slope", index_snp = "rs11955168",  flank = c(5e5,5e5), #+-500kb
+               ens_db = "EnsDb.Hsapiens.v86")
+locus_plot(locb,)
+```

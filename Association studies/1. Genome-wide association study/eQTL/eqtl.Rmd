@@ -1,0 +1,390 @@
+---
+title: "eqtl"
+output: html_document
+date: "2024-11-26"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+We can look in the RNA-seq data from Hispanic/Latino children in Kachuri et al. study, publicly available data here:
+https://www.youtube.com/watch?v=lfHa7mmjv1I 
+https://zenodo.org/records/7735723
+
+#conda activate piptest 
+#use zenodo_get DOI id
+ 
+Check the cis-eQTL results in:
+#Mexican American children: MX.cis-eQTL.tar.gz
+ 
+#High Indigenous American ancestry (“IAMhigh”): IAMHp5.cis-eQTL.tar.gz
+ 
+ 
+Can compare results with GTEX (https://gtexportal.org/home/), even if the SNP gives no results we can mention in your talk.
+ 
+Thanks!
+Adam
+
+#https://github.com/Damon0212/AABCG_GWAS_breast_cancer/blob/main/5_eQTL_colocalization.txt
+
+## (5) eQTL using Komen samples
+
+##(a) Extract variants within 10kb from the lead SNP, generate dosage and freq file uisng PLINK
+#decompress into a new folder
+tar -xvzf  IAMHp5.cis-eQTL.tar.gz -C /project/desmith_128/tanxin/project2/eQTL/IAMHp5.cis-eQTL
+cd /project/desmith_128/tanxin/project2/eQTL/IAMHp5.cis-eQTL
+gunzip *.txt.gz
+
+cd /project/desmith_128/tanxin/project2/eQTL/MX.cis-eQTL
+gunzip *.txt.gz
+
+cd /project/lishaobo_902/datasets/CCRLP/CCRLP_Kaiser_TOPMed_imputation/LAT/chr5.dose.vcf.gz
+
+plink2 --vcf chr5.dose.vcf.gz  --chr 5  --from-bp  132121215  --to-bp 133121215   --make-bed --out /project/desmith_128/tanxin/project2/eQTL/eqtl/Komen_chr"$i"_"$start"_"$end"
+
+#Data are from:
+#https://github.com/angelcymak/gala2_sage_eQTL
+
+```{r, echo=FALSE}
+# cis-eQTL
+# --------
+#   group:
+#     AA (African American)
+#     PR (Puerto Rican)
+#     MX (Mexican American)
+#     All (Pooled)
+#     AFRHp5 (AFR high)
+#     AFRLow (AFR low) 
+#     IAMHp5 (IAM high)
+#     IAMLow (IAM low)
+# 
+# 
+# gene_id: gene ID from GENCODE v30
+#   variant_id: variant ID in dbsnp150 or chr:pos:ref:alt(b38) format
+#   tss_distance: distance between variant_ID and TSS of gene
+#   ma_samples: number of samples that contains the minor allele
+#   ma_count: minor allele count
+#   maf: minor allele frequency
+#   pval_nominal: p-value
+#   slope: effect size relative to the alternative allele
+#   slope_se: standard error of the effeice size
+#   qval: per-gene qvalue (BH corection) calculated from beta-approximated p-value
+#   pval_nominal_threshold: per-gene nominal p-value threshold as described in https://github.com/francois-a/fastqtl/blob/master/doc/pages/cis_permutation.html
+#   eQTL.flag: TRUE (is an eQTL) if pval_nominal < pval_nominal_threhold
+#   vid2: variant ID in the format of chr<chr>_<position>_<ref>_<alt>_b38
+
+```
+
+```{r, echo=FALSE}
+BiocManager::install("snpStats")
+install.packages("coloc")
+library(data.table)
+library(tidyr)
+library(dplyr)
+library(tidyverse)
+library(coloc)
+library(httr)
+library(jsonlite)
+getwd()
+
+```
+#https://hanruizhang.github.io/GWAS-eQTL-Colocalization/
+#Colocalization analysis using coloc
+```{r, echo=FALSE}
+eqtl <- read.table(file="/project/desmith_128/tanxin/project2/eQTL/MX.cis-eQTL/5.allpairs.more.galasage.hg38.txt", header=T, as.is=T)
+
+head(eqtl) 
+
+#GWAS restricted to chromosome five
+# gwas <- read.table(file="/scratch1/tanxinli/GUAT/checkbim_impute/binary/meta-analysis/METAANALYSIS_nogc_nop_Rsq_filtering_flipped1009-21.txt", header=T, as.is=T)
+
+rad_meta <- fread("/project/desmith_128/tanxin/project2/fine-mapping/susie/RAD50_data/RA50_5cohort_meta", header = T)
+setnames(rad_meta , 1, "CHR")
+#head(rad_meta)
+# rad_meta  <- rad_meta  %>% filter(CHR == 5 & POS >= 132143958 & POS <= 133143958 & HetDf >=3)
+
+rad_meta  <- rad_meta  %>% filter(CHR == 5 & POS >= 132121215	 & POS <= 	133121215 & HetDf >=3)
+
+#  2435 variants in at least four cohorts
+#2371 variants at least four cohorts for chr5:132621215:C/T
+head(rad_meta)
+
+```
+
+#convert rsID into chr:pos:ref:alt
+# we can use biomaRt package or query resources like Ensembl's API to convert rsIDs into chr:pos:ref:alt for the hg38 genome build
+#If biomaRt is slow or unavailable, you can query Ensembl's REST API directly. Here's an example using the httr package:
+```{r, echo=FALSE}
+ library(biomaRt)
+library(httr)
+library(jsonlite)
+#Step 1: Load the file:
+
+# Step 2: Identify rsIDs
+rsid_rows <- grepl("^rs[0-9]+$", eqtl$variant_id)
+
+# Extract rsIDs for processing
+rsids <- eqtl$variant_id[rsid_rows]
+rsids <- as.list(rsids)
+#step 3
+rsID="rs6898675"
+fetch_variant_data <- function(rsID) {
+
+  url <- paste0("https://rest.ensembl.org/variation/human/", rsID, "?content-type=application/json")
+  response <- GET(url)
+
+  # Check if the response is valid
+  if (status_code(response) == 200) {
+    data <- fromJSON(content(response, as = "text", encoding = "UTF-8"))
+    
+  # Check if the response contains a 'mappings' field
+    if (!is.null(data$mappings) && length(data$mappings) > 0) {
+      mapping <- data$mappings # Use the first mapping
+      if (is.list(mapping) && "allele_string" %in% names(mapping)) {
+        alleles <- strsplit(mapping$allele_string, "/")[[1]]
+       chr_pos_ref_alt <- paste0("chr", mapping$seq_region_name, ":", mapping$start, ":", alleles[1], ":", alleles[2])
+        return(c(rsID, chr_pos_ref_alt))
+      }
+    }
+  }
+  
+ # Log error for missing data
+  return(c(rsID, NA))  # Return original rsID with NA for missing data
+}
+
+# Step 4: Query rsIDs in the file
+result <- t(sapply(rsids, fetch_variant_data, USE.NAMES = FALSE))
+
+# Step 5: Replace rsIDs in the original data with chr:pos:ref:alt
+result_df <- as.data.frame(result, stringsAsFactors = FALSE)
+colnames(result_df) <- c("rsID", "chr_pos_ref_alt")
+
+# Step 6: Save updated data to a new file
+write.table(result_df, "updated_file.txt", row.names = FALSE, col.names = TRUE, quote = FALSE, sep = "\t")
+
+
+```
+
+Function to query rsID
+https://rest.ensembl.org/variation/human/rs6886059/?content-type=application/json
+```{r, echo=FALSE}
+# Function to query rsID
+fetch_variant_data <- function(rsID) {
+  url <- paste0("https://rest.ensembl.org/variation/human/", rsID, "?content-type=application/json")
+  response <- GET(url)
+  if (status_code(response) == 200) {
+    data <- fromJSON(content(response, as = "text", encoding = "UTF-8"))
+    if (length(data$mappings) > 0) {
+      mapping <- data$mappings[[1]]
+      alleles <- strsplit(mapping$allele_string, "/")[[1]]
+      return(data.frame(
+        rsID = rsID,
+        chr = mapping$seq_region_name,
+        pos = mapping$start,
+        ref = alleles[1],
+        alt = alleles[2]
+      ))
+    }
+  }
+  return(data.frame(rsID = rsID, chr = NA, pos = NA, ref = NA, alt = NA))
+}
+
+# List of rsIDs
+rsids <- c("rs12345", "rs67890")
+
+# Fetch data for each rsID
+results <- do.call(rbind, lapply(rsids, fetch_variant_data))
+
+# Print results
+print(results)
+
+```
+
+#vid_2   modify eqtl vid2 
+```{r, echo=FALSE}
+eqtl$ID <- gsub("_", ":", gsub("_b38$", "", eqtl$vid2)) 
+eqtl_2 <- eqtl %>%
+  mutate(
+    # Step 2: Extract CHR, POS, REF, and ALT
+    CHR = as.integer(sub("chr", "", sapply(strsplit(ID, ":"), `[`, 1))), # Extract CHR
+    POS = as.integer(sapply(strsplit(ID, ":"), `[`, 2)),                 # Extract POS
+    REF = sapply(strsplit(ID, ":"), `[`, 3),                            # Extract REF
+    ALT = sapply(strsplit(ID, ":"), `[`, 4)                             # Extract ALT
+  ) 
+
+eqtl_3 <- eqtl_2  %>%
+  # Step 3: Filter the data based on conditions
+  dplyr::filter( CHR == 5 & eQTL.flag==TRUE
+    
+   # CHR == 5 & POS >= 132143958 & POS <= 133143958 & eQTL.flag ==TRUE
+    #CHR == 5 & POS >= 132143958 & POS <= 133143958 & eQTL.flag ==TRUE
+  ) 
+fwrite(eqtl_3,"mx_eqtl3.csv")
+head(eqtl_3)
+
+fwrite(eqtl_2, "mx_eqtl2.csv")
+
+fwrite(eqtl, "mx_eqtl.csv")
+
+```
+
+
+
+#selecting the top eQTL
+```{r, echo=FALSE}
+# Example of selecting top eQTL
+eqtl_4 <- eqtl_3 %>%
+  group_by(variant_id) %>% 
+ slice_min(pval_nominal, n = 1, with_ties = FALSE) %>%  
+  ungroup()
+fwrite(eqtl_3,"mx_eqtl3.csv")
+```
+
+
+```{r, echo=FALSE}
+```
+
+
+
+
+#Merge gwas and eqtl data sets by only shared “rs _ id”:
+```{r, echo=FALSE}
+rad_meta <- rad_meta[!duplicated(rad_meta$ID), ]
+
+input <- merge(eqtl_data, rad_meta, by="ID", all=FALSE, suffixes=c("_eqtl","gwas")) 
+    head(input)
+input[input$ALLELE1 != input$ALT,'BETA'] = -input[input$ALLELE1 != input$ALT,'BETA']
+
+input2 <- input %>%
+  filter(grepl("^rs\\d+", variant_id))
+ fwrite(input2, "input1922.tsv") 
+  sed 's/,/\t/g' input1922.tsv > output.tsv
+```
+
+
+
+Optinal: provide suffix to differentiate data source from gwas or eqtl.
+
+#Run coloc using coloc.abf() fuction:
+#https://www.rdocumentation.org/packages/coloc/versions/3.1/topics/coloc.abf
+
+
+
+```{r, echo=FALSE}
+result <- coloc.abf(dataset1=list(
+   snp = input$ID,  # SNP identifiers
+  pvalues=input$P, #GWAS 
+  type="cc", 
+  s=0.194, 
+  N=nrow(rad_meta)),
+dataset2=list(
+  snp = input$ID,
+  pvalues=input$pval_nominal, #eQTL 
+  type="quant", 
+  N=nrow(eqtl_3)), 
+MAF=input$maf)
+
+#Vector of minor allele frequencies corresponding to each SNP MAF
+
+
+
+```
+PP.H0.abf PP.H1.abf PP.H2.abf PP.H3.abf PP.H4.abf 
+4.21e-142 1.81e-140  2.27e-02  9.76e-01  1.00e-03 
+[1] "PP abf for shared variant: 0.1%"
+
+
+Read out posterior probabilities for colocalization:
+H0: neither trait has a genetic association in the region
+H1/H2: only trait 1/trait 2 has a genetic association in the region
+H3: both traits are associated, but with different causal variants
+H4: both traits are associated and share a single causal variant
+A posterior probability of ≥75% is considered strong evidence of the eQTL-GWAS pair influencing both the expression and GWAS trait at a particular region.
+
+#4. Visualization using locuscomparer
+```{r, echo=FALSE}
+
+R.home()
+
+
+#Define file names of the GWAS and eQTL data sets:
+gwas_fn="rad_meta.csv"
+eqtl_fn="eqtl_3"
+marker_col="ID"
+pval_col="pval_nominal"
+```
+
+#5. Run locuscompare to visualize: 
+#https://www.locuscompare2.com/
+
+```{r, echo=FALSE}
+
+locuscompare(in_fn1=gwas_fn, in_fn2=eqtl_fn, title1="GWAS", title2="eQTL", marker_col1= ID, pval_col1=P, marker_col2=vid2, pval_col2=pval_nominal)
+```
+
+
+
+```{r, echo=FALSE}
+R.home("lib")
+"/spack/2206/apps/linux-centos7-x86_64_v3/gcc-11.3.0/r-4.3.3-6d6hxxa/rlib/R/include"
+"/spack/2206/apps/linux-centos7-x86_64_v3/gcc-11.3.0/r-4.3.3-6d6hxxa/rlib/R/lib"
+Installing package into ‘/home1/tanxinli/R/x86_64-pc-linux-gnu-library/4.3’
+
+install.packages("RMySQL")
+
+install.packages("devtools")
+devtools::install_github("boxiangliu/locuscomparer")
+
+head(input)
+```
+
+
+```{r, echo=FALSE}
+
+
+library(ggplot2)
+library(dplyr)
+
+gwas_data <- rad_meta %>% select(c(POS, P)) %>% rename(pos = POS, pval = P)
+eqtl_data <- eqtl_2 %>% select(c(POS, pval_nominal )) %>% rename(pos = POS, pval = pval_nominal)
+
+
+# Function to create locus comparison plot
+create_locus_comparison_plot <- function(gwas_data, eqtl_data) {
+  # Merge datasets by position
+  merged_data <- full_join(
+    gwas_data %>% select(pos, gwas_pval = pval), 
+    eqtl_data %>% select(pos, eqtl_pval = pval), 
+    by = "pos"
+  )
+  
+  # Calculate -log10 p-values
+  merged_data <- merged_data  %>%
+    mutate(
+      gwas_log_pval = -log10(gwas_pval),
+      eqtl_log_pval = -log10(eqtl_pval)
+    )
+  
+  # Create scatter plot
+  ggplot(merged_data, aes(x = gwas_log_pval, y = eqtl_log_pval)) +
+    geom_point(alpha = 0.6, color = "black") +
+    geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+    labs(
+      title = "GWAS vs eQTL P-value Comparison",
+      x = "GWAS -log10(p-value)",
+      y = "eQTL -log10(p-value)"
+    ) +
+    theme_minimal() 
+}
+
+
+
+# Create and save the plot
+locuscompare(in_fn1=gwas_fn, in_fn2=eqtl_fn, title1="GWAS", title2="eQTL", marker_col1= ID, pval_col1=P, marker_col2=vid2, pval_col2=pval_nominal)
+
+plot <- create_locus_comparison_plot(gwas_data, eqtl_data)
+ggsave("locus_comparison.png", plot, width = 8, height = 6)
+```
+
