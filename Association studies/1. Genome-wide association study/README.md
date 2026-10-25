@@ -3,8 +3,8 @@
 Short description of this workflow: input data, tools, and output.
 
 ## QC and imputation
-1. [Pre-imputation QC steps] (./GWAS%20data%20analysis%20/1.Pre-imputation.sh)
-2. [Post-imputation QC steps: step 1-5]: (./GWAS%20data%20analysis%20/2.Post-imputation.sh)
+1. [Pre-imputation QC steps] (1.Pre-imputation.sh)
+2. [Post-imputation QC steps] (2.Post-imputation.sh)
 
 ## Association testing 
 step 6 and 7 [2.Post-imputation.sh]
