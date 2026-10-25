@@ -9,7 +9,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-We can look in the RNA-seq data from Hispanic/Latino children in Kachuri et al. study, publicly available data here:
+We can check the RNA-seq data from Hispanic/Latino children in Kachuri et al. study, publicly available data here:
 https://www.youtube.com/watch?v=lfHa7mmjv1I 
 https://zenodo.org/records/7735723
 
