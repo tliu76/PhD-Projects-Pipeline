@@ -11,9 +11,9 @@
 #SBATCH --account=desmith_128
 #SBATCH --array=1-9
 
-# PLINK批量计算PRS
+
 cd /scratch1/tanxinli/mp2prt_gwas/PRS/
-PFILE="/scratch1/tanxinli/mp2prt_gwas/filtered/MP2PRT.impute"  # 你的基因型数据前缀
+PFILE="/scratch1/tanxinli/mp2prt_gwas/filtered/MP2PRT.impute"
 
 PFILE2="/scratch1/tanxinli/mp2prt_gwas/MP2PRT.dosage"  # before post-imputation filtering
 
